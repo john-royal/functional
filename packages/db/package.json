@@ -7,7 +7,9 @@
     "push": "drizzle-kit push"
   },
   "exports": {
-    ".": "./index.ts"
+    ".": "./index.ts",
+    "./client": "./client.ts",
+    "./neon": "./neon.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

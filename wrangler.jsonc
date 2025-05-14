@@ -3,9 +3,17 @@
   "main": "./packages/web/.output/server/index.mjs",
   "compatibility_date": "2025-04-20",
   "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "AUTH_URL": "https://auth.johnroyal.workers.dev",
+    "API_URL": "https://api.johnroyal.workers.dev",
+    "FRONTEND_URL": "https://web.johnroyal.workers.dev"
+  },
   "assets": {
     "directory": "./packages/web/.output/public",
     "binding": "ASSETS"
   },
-  "services": [{ "binding": "AUTH", "service": "auth-issuer" }]
+  "services": [
+    { "binding": "AUTH", "service": "auth-issuer" },
+    { "binding": "API", "service": "api" }
+  ]
 }

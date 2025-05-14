@@ -17,19 +17,29 @@ import { env } from "cloudflare:workers";
 declare module "cloudflare:workers" {
   namespace Cloudflare {
     interface Env {
+      FRONTEND_URL: string;
+      AUTH_URL: string;
+      API_URL: string;
       AUTH: Fetcher;
+      API: Fetcher;
     }
   }
 }
 
 const authClient = new AuthClient({
-  clientID: "auth",
-  issuer: "https://auth.johnroyal.workers.dev",
-  redirectURI: "https://web.johnroyal.workers.dev/auth/callback",
-  fetch: (url, options) => {
-    return env.AUTH.fetch(url, {
+  clientID: "api",
+  issuer: env.AUTH_URL,
+  redirectURI: `${env.FRONTEND_URL}/auth/callback`,
+  fetch: async (url, options) => {
+    const res = await env.AUTH.fetch(url, {
       ...options,
       cf: { cacheEverything: url.includes("/.well-known") },
+    });
+    const text = await res.text();
+    console.log("this is the res", text);
+    return new Response(text, {
+      status: res.status,
+      headers: res.headers,
     });
   },
 });
@@ -47,13 +57,13 @@ const setTokens = (tokens: Tokens) => {
   setCookie("access_token", tokens.access, {
     path: "/",
     httpOnly: true,
-    secure: true,
+    secure: false,
     sameSite: "lax",
   });
   setCookie("refresh_token", tokens.refresh, {
     path: "/",
     httpOnly: true,
-    secure: true,
+    secure: false,
     sameSite: "lax",
   });
 };
@@ -63,31 +73,67 @@ const clearTokens = () => {
   deleteCookie("refresh_token");
 };
 
+interface AuthenticatedContext {
+  subject: Subject;
+  token: string;
+}
+
+interface UnauthenticatedContext {
+  subject: null;
+  token: null;
+}
+
+type AuthContext = AuthenticatedContext | UnauthenticatedContext;
+
 export const authMiddleware = createMiddleware().server(async ({ next }) => {
   const tokens = getTokens();
   if (tokens) {
     const res = await authClient.verify(tokens);
     if (res.err) {
       clearTokens();
-      return next<{ subject: Subject | null }>({
-        context: { subject: null },
+      return next<AuthContext>({
+        context: { subject: null, token: null },
       });
     }
     if (res.tokens) {
       setTokens(res.tokens);
     }
-    return next<{ subject: Subject | null }>({
-      context: { subject: res.subject },
+    return next<AuthContext>({
+      context: {
+        subject: res.subject,
+        token: res.tokens?.access ?? tokens.access,
+      },
     });
   }
-  return next<{ subject: Subject | null }>({
-    context: { subject: null },
+  return next<AuthContext>({
+    context: { subject: null, token: null },
   });
 });
 
 export const authState = createServerFn()
   .middleware([authMiddleware])
-  .handler(({ context }) => context.subject);
+  .handler(({ context }) => ({
+    subject: context.subject,
+    token: context.token,
+  }));
+
+export const listTeams = createServerFn()
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const res = await env.API.fetch(`${env.API_URL}/teams`, {
+      headers: {
+        Authorization: `Bearer ${context.token}`,
+      },
+    });
+    return {
+      subject: context.subject,
+      teams: (await res.json()) as {
+        id: string;
+        name: string;
+        slug: string;
+      }[],
+    };
+  });
 
 export const authLogout = createServerFn().handler(async () => {
   clearTokens();
@@ -99,7 +145,7 @@ export const authRedirect = createServerFn().handler(async () => {
   setCookie("auth_challenge", JSON.stringify(res.challenge), {
     path: "/",
     httpOnly: true,
-    secure: true,
+    secure: false,
     sameSite: "lax",
     maxAge: 60 * 60 * 24,
   });

@@ -1,12 +1,12 @@
 import { and, eq, schema } from "@functional/db";
+import { createDatabaseClient, type Database } from "@functional/db/client";
 import { createId } from "@paralleldrive/cuid2";
-import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 
 export class DatabaseClient {
-  db: NodePgDatabase<typeof schema>;
+  db: Database;
 
   constructor(connectionString: string) {
-    this.db = drizzle(connectionString, { schema });
+    this.db = createDatabaseClient(connectionString);
   }
 
   async findUser(githubId: number) {

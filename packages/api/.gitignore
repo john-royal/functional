@@ -32,12 +32,3 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Finder (MacOS) folder config
 .DS_Store
-
-# alchemy
-.alchemy
-
-# turbo
-.turbo
-
-# dev (see scripts/dev.ts)
-.dev
