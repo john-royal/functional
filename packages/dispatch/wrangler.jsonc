@@ -1,0 +1,21 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "dispatch",
+  "main": "./src/index.ts",
+  "compatibility_date": "2025-04-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "dispatch_namespaces": [
+    {
+      "binding": "DISPATCH",
+      "namespace": "functional-staging",
+    },
+  ],
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "" }],
+  "observability": { "enabled": true },
+  "routes": [
+    {
+      "pattern": "*functional.dev/*",
+      "zone_id": "",
+    },
+  ],
+}

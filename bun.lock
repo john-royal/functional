@@ -5,6 +5,7 @@
       "name": "functional",
       "devDependencies": {
         "@cloudflare/unenv-preset": "^2.3.1",
+        "@cloudflare/workers-types": "^4.20250514.0",
         "@types/bun": "latest",
         "@types/node": "22",
         "alchemy": "^0.16.2",
@@ -66,6 +67,17 @@
       },
       "peerDependencies": {
         "typescript": "^5",
+      },
+    },
+    "packages/dispatch": {
+      "name": "@functional/dispatch",
+      "version": "0.0.1",
+      "dependencies": {
+        "@functional/db": "workspace:*",
+      },
+      "devDependencies": {
+        "@cloudflare/workers-types": "^4.20250514.0",
+        "wrangler": "^4.14.4",
       },
     },
     "packages/web": {
@@ -391,6 +403,8 @@
     "@functional/auth": ["@functional/auth@workspace:packages/auth"],
 
     "@functional/db": ["@functional/db@workspace:packages/db"],
+
+    "@functional/dispatch": ["@functional/dispatch@workspace:packages/dispatch"],
 
     "@functional/web": ["@functional/web@workspace:packages/web"],
 

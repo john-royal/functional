@@ -1,3 +1,4 @@
+export * from "./deployments";
 export * from "./git";
 export * from "./projects";
 export * from "./teams";
