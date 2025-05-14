@@ -1,0 +1,9 @@
+{
+  "name": "auth",
+  "main": "./packages/auth/src/worker.ts",
+  "compatibility_date": "2025-04-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "kv_namespaces": [
+    { "binding": "AUTH_KV", "id": "81b7a2d750db4a669b3f84ce5376e9c1" }
+  ]
+}
