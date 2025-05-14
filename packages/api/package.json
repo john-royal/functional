@@ -16,6 +16,7 @@
   "dependencies": {
     "@functional/auth": "workspace:*",
     "@functional/db": "workspace:*",
+    "@paralleldrive/cuid2": "^2.2.2",
     "hono": "^4.7.9"
   }
 }

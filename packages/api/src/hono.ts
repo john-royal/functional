@@ -91,6 +91,34 @@ const teamMiddleware = createMiddleware<
   return next();
 });
 
+const projectMiddleware = createMiddleware<
+  {
+    Bindings: Bindings;
+    Variables: Variables & {
+      project: Select["projects"];
+    };
+  },
+  "/teams/:team/projects/:project"
+>(async (c, next) => {
+  const db = c.env.DB;
+  const [item] = await db
+    .select(getTableColumns(schema.projects))
+    .from(schema.projects)
+    .where(
+      or(
+        eq(schema.projects.id, c.req.param("project")),
+        eq(schema.projects.slug, c.req.param("project"))
+      )
+    );
+  if (!item) {
+    throw new HTTPException(404, {
+      message: "Project not found",
+    });
+  }
+  c.set("project", item);
+  return next();
+});
+
 export const app = new Hono<{ Bindings: Bindings; Variables: Variables }>()
   .use(authMiddleware)
   .use(async (c, next) => {
@@ -117,23 +145,23 @@ export const app = new Hono<{ Bindings: Bindings; Variables: Variables }>()
       .where(eq(schema.projects.teamId, c.get("team").id));
     return c.json(projects);
   })
-  .get("/teams/:team/projects/:project", async (c) => {
+  .use("/teams/:team/projects/:project/*", projectMiddleware)
+  .get("/teams/:team/projects/:project", (c) => {
+    return c.json(c.get("project"));
+  })
+  .post("/teams/:team/projects/:project/deployments", async (c) => {
+    const body = (await c.req.json()) as {
+      workerName: string;
+    };
     const db = c.env.DB;
-    const [project] = await db
-      .select()
-      .from(schema.projects)
-      .where(
-        or(
-          eq(schema.projects.id, c.req.param("project")),
-          eq(schema.projects.slug, c.req.param("project"))
-        )
-      );
-    if (!project || project.teamId !== c.get("team").id) {
-      throw new HTTPException(404, {
-        message: "Project not found",
-      });
-    }
-    return c.json(project);
+    const [deployment] = await db
+      .insert(schema.deployments)
+      .values({
+        projectId: c.get("project").id,
+        workerName: body.workerName,
+      })
+      .returning();
+    return c.json(deployment);
   })
   .onError((err, c) => {
     return c.json(

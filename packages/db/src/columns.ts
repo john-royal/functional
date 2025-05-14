@@ -6,7 +6,12 @@ export const cuid = () => {
   const primaryKey = () => {
     return char({ length: 24 }).primaryKey().$defaultFn(createId);
   };
-  return Object.assign(column, { primaryKey });
+  return Object.assign(column, { primaryKey }) as Omit<
+    typeof column,
+    "primaryKey"
+  > & {
+    primaryKey: typeof primaryKey;
+  };
 };
 
 export const timestamps = () => ({

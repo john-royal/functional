@@ -26,6 +26,7 @@
       "dependencies": {
         "@functional/auth": "workspace:*",
         "@functional/db": "workspace:*",
+        "@paralleldrive/cuid2": "^2.2.2",
         "hono": "^4.7.9",
       },
       "devDependencies": {
@@ -49,6 +50,15 @@
       "devDependencies": {
         "@cloudflare/workers-types": "^4.20250514.0",
         "@types/pg": "^8.15.1",
+      },
+      "peerDependencies": {
+        "typescript": "^5",
+      },
+    },
+    "packages/build": {
+      "name": "build",
+      "devDependencies": {
+        "@types/bun": "latest",
       },
       "peerDependencies": {
         "typescript": "^5",
@@ -1003,6 +1013,8 @@
     "buffer-crc32": ["buffer-crc32@1.0.0", "", {}, "sha512-Db1SbgBS/fg/392AblrMJk97KggmvYhr4pB5ZIMTWtaivCPMWLkmb7m21cJvpvgK+J3nsU2CmmixNBZx4vFj/w=="],
 
     "buffer-from": ["buffer-from@1.1.2", "", {}, "sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ=="],
+
+    "build": ["build@workspace:packages/build"],
 
     "builtin-modules": ["builtin-modules@3.3.0", "", {}, "sha512-zhaCDicdLuWN5UbN5IMnFqNMhNfo919sH85y2/ea+5Yg9TsTkeZxpL+JLbp6cgYFS4sRLp3YV4S6yDuqVWHYOw=="],
 
