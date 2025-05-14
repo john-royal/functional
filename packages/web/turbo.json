@@ -3,6 +3,7 @@
   "extends": ["//"],
   "tasks": {
     "build": {
+      "env": ["VITE_API_URL"],
       "inputs": ["app.config.ts", "package.json", "public/**", "src/**"],
       "outputs": [".output/**", ".vinxi/**"]
     }

@@ -77,6 +77,8 @@ class Dev {
 const api = new Dev("api", "packages/api/src/index.local.ts", {
   port: 8001,
   bindings: {
+    GITHUB_APP_ID: process.env.GITHUB_APP_ID!,
+    GITHUB_PRIVATE_KEY: process.env.GITHUB_PRIVATE_KEY!,
     HYPERDRIVE: {
       connectionString: process.env.DATABASE_URL!,
     },
@@ -85,6 +87,6 @@ const api = new Dev("api", "packages/api/src/index.local.ts", {
 
 await api.build();
 
-Bun.spawn(["bun", "run", "dev"], {
-  cwd: join(cwd, "packages", "web"),
-});
+await Bun.$.cwd(join(cwd, "packages", "web")).env({
+  VITE_API_URL: "http://localhost:8001",
+})`bun run dev`;

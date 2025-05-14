@@ -8,18 +8,26 @@ import {
   type Select,
 } from "@functional/db";
 import { type Database } from "@functional/db/client";
+import { sValidator } from "@hono/standard-validator";
+import { createId } from "@paralleldrive/cuid2";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
+import { App } from "octokit";
+import z from "zod";
 
 interface Bindings {
   DB: Database;
   AUTH: Fetcher;
   HYPERDRIVE: Hyperdrive;
+  GITHUB_APP_ID: string;
+  GITHUB_PRIVATE_KEY: string;
 }
 
 interface Variables {
   subject: Subject;
+  github: App;
 }
 
 const authMiddleware = createMiddleware<{
@@ -120,8 +128,20 @@ const projectMiddleware = createMiddleware<
 });
 
 export const app = new Hono<{ Bindings: Bindings; Variables: Variables }>()
+  .use(
+    cors({
+      origin: ["https://web.johnroyal.workers.dev", "http://localhost:3000"],
+    })
+  )
   .use(authMiddleware)
   .use(async (c, next) => {
+    c.set(
+      "github",
+      new App({
+        appId: c.env.GITHUB_APP_ID,
+        privateKey: c.env.GITHUB_PRIVATE_KEY,
+      })
+    );
     return next();
   })
   .get("/teams", async (c) => {
@@ -145,23 +165,102 @@ export const app = new Hono<{ Bindings: Bindings; Variables: Variables }>()
       .where(eq(schema.projects.teamId, c.get("team").id));
     return c.json(projects);
   })
+  .get("/teams/:team/git-namespaces", async (c) => {
+    const db = c.env.DB;
+    const namespaces = await db
+      .select()
+      .from(schema.gitNamespaces)
+      .where(eq(schema.gitNamespaces.teamId, c.get("team").id));
+    return c.json(namespaces);
+  })
+  .get("/teams/:team/git-namespaces/redirect", async (c) => {
+    const url = await c.get("github").getInstallationUrl();
+    return c.redirect(url);
+  })
+  .post(
+    "/teams/:team/git-namespaces",
+    sValidator(
+      "json",
+      z.object({
+        installationId: z.number(),
+      })
+    ),
+    async (c) => {
+      const body = c.req.valid("json");
+      const app = c.get("github");
+      const db = c.env.DB;
+      const installation = await app.octokit.rest.apps.getInstallation({
+        installation_id: body.installationId,
+      });
+      if (!installation.data.account) {
+        throw new HTTPException(400, {
+          message: "Invalid installation",
+        });
+      }
+      const [gitNamespace] = await db
+        .insert(schema.gitNamespaces)
+        .values({
+          teamId: c.get("team").id,
+          installationId: body.installationId,
+          targetType:
+            installation.data.target_type === "Organization"
+              ? "organization"
+              : "user",
+          targetId: installation.data.target_id,
+          targetName:
+            "login" in installation.data.account
+              ? installation.data.account.login
+              : installation.data.account.slug,
+        })
+        .returning();
+      if (!gitNamespace) {
+        throw new HTTPException(500, {
+          message: "Failed to create git namespace",
+        });
+      }
+      return c.json(gitNamespace);
+    }
+  )
+  .post(
+    "/teams/:team/projects",
+    sValidator(
+      "json",
+      z.object({
+        name: z.string(),
+        slug: z.string(),
+        gitRepository: z.object({
+          name: z.string(),
+          githubRepositoryId: z.number(),
+          namespaceId: z.string(),
+        }),
+      })
+    ),
+    async (c) => {
+      const body = c.req.valid("json");
+      const db = c.env.DB;
+      const projectId = createId();
+      const gitRepositoryId = createId();
+      await db.transaction(async (tx) => {
+        await tx.insert(schema.gitRepositories).values({
+          id: gitRepositoryId,
+          name: body.gitRepository.name,
+          githubRepositoryId: body.gitRepository.githubRepositoryId,
+          namespaceId: body.gitRepository.namespaceId,
+        });
+        await tx.insert(schema.projects).values({
+          id: projectId,
+          name: body.name,
+          slug: body.slug,
+          teamId: c.get("team").id,
+          gitRepositoryId,
+        });
+      });
+      return c.json({ id: projectId });
+    }
+  )
   .use("/teams/:team/projects/:project/*", projectMiddleware)
   .get("/teams/:team/projects/:project", (c) => {
     return c.json(c.get("project"));
-  })
-  .post("/teams/:team/projects/:project/deployments", async (c) => {
-    const body = (await c.req.json()) as {
-      workerName: string;
-    };
-    const db = c.env.DB;
-    const [deployment] = await db
-      .insert(schema.deployments)
-      .values({
-        projectId: c.get("project").id,
-        workerName: body.workerName,
-      })
-      .returning();
-    return c.json(deployment);
   })
   .onError((err, c) => {
     return c.json(

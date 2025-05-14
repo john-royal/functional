@@ -7,6 +7,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { cuid, timestamps } from "./columns";
 import { teams } from "./teams";
+import { gitRepositories } from "./git";
 
 export const projects = pgTable("projects", {
   id: cuid().primaryKey(),
@@ -15,6 +16,9 @@ export const projects = pgTable("projects", {
   teamId: cuid()
     .notNull()
     .references(() => teams.id),
+  gitRepositoryId: cuid()
+    .notNull()
+    .references(() => gitRepositories.id),
   ...timestamps(),
 });
 

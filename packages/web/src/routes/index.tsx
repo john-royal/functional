@@ -1,25 +1,15 @@
-import { authLogout, authRedirect, listTeams } from "@/lib/auth";
-import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
+import { authState } from "@/lib/auth";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
-  component: App,
-  loader: () => listTeams(),
+  loader: async () => {
+    const { subject } = await authState();
+    if (!subject) {
+      throw redirect({ to: "/auth" });
+    }
+    throw redirect({
+      to: "/$team",
+      params: { team: subject.properties.defaultTeam.slug },
+    });
+  },
 });
-
-function App() {
-  const data = Route.useLoaderData();
-  const login = useServerFn(authRedirect);
-  const logout = useServerFn(authLogout);
-
-  return (
-    <div className="text-center">
-      <pre>{JSON.stringify(data, null, 2)}</pre>
-      {data.subject ? (
-        <button onClick={() => logout()}>Logout</button>
-      ) : (
-        <button onClick={() => login()}>Login</button>
-      )}
-    </div>
-  );
-}

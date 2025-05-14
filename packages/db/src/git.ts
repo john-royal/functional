@@ -3,6 +3,7 @@ import {
   pgEnum,
   pgTable,
   timestamp,
+  unique,
   varchar,
 } from "drizzle-orm/pg-core";
 import { cuid, timestamps } from "./columns";
@@ -18,20 +19,25 @@ export const gitNamespaces = pgTable("git_namespaces", {
   teamId: cuid()
     .notNull()
     .references(() => teams.id),
-  installationId: bigint({ mode: "number" }).notNull(),
+  installationId: bigint({ mode: "number" }).notNull().unique(),
   targetType: gitTargetType().notNull(),
-  targetId: varchar({ length: 255 }).notNull(),
+  targetId: bigint({ mode: "number" }).notNull(),
   targetName: varchar({ length: 255 }).notNull(),
   token: varchar({ length: 255 }),
   expiresAt: timestamp("expires_at"),
   ...timestamps(),
 });
 
-export const gitRepositories = pgTable("git_repositories", {
-  id: cuid().primaryKey(),
-  namespaceId: cuid()
-    .notNull()
-    .references(() => gitNamespaces.id),
-  name: varchar({ length: 255 }).notNull(),
-  ...timestamps(),
-});
+export const gitRepositories = pgTable(
+  "git_repositories",
+  {
+    id: cuid().primaryKey(),
+    namespaceId: cuid()
+      .notNull()
+      .references(() => gitNamespaces.id),
+    githubRepositoryId: bigint({ mode: "number" }).notNull(),
+    name: varchar({ length: 255 }).notNull(),
+    ...timestamps(),
+  },
+  (t) => [unique().on(t.namespaceId, t.githubRepositoryId)]
+);

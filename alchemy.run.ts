@@ -74,6 +74,8 @@ const api = await Worker("api", {
   bindings: {
     AUTH: auth,
     HYPERDRIVE: db.hyperdrive,
+    GITHUB_APP_ID: alchemy.secret(process.env.GITHUB_APP_ID),
+    GITHUB_PRIVATE_KEY: alchemy.secret(process.env.GITHUB_PRIVATE_KEY),
   },
   observability: { enabled: true },
   compatibilityFlags: ["nodejs_compat"],
@@ -95,6 +97,9 @@ await TanStackStart("web", {
   },
   observability: {
     enabled: true,
+  },
+  env: {
+    VITE_API_URL: "https://api.johnroyal.workers.dev",
   },
 });
 

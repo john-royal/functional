@@ -1,4 +1,4 @@
-import { desc, eq, schema } from "@functional/db";
+import { and, desc, eq, schema } from "@functional/db";
 import { createDatabaseClient, type Database } from "@functional/db/client";
 
 interface Env {
@@ -17,13 +17,16 @@ class Client {
     const [deployment] = await this.db
       .select({
         id: schema.deployments.id,
-        workerName: schema.deployments.workerName,
+        output: schema.deployments.output,
       })
       .from(schema.projects)
       .where(eq(schema.projects.slug, projectSlug))
       .innerJoin(
         schema.deployments,
-        eq(schema.projects.id, schema.deployments.projectId)
+        and(
+          eq(schema.projects.id, schema.deployments.projectId),
+          eq(schema.deployments.status, "success")
+        )
       )
       .orderBy(desc(schema.deployments.createdAt))
       .limit(1);
@@ -40,22 +43,42 @@ export default {
     }
     const deployment = await client.getDeployment(slug);
     if (!deployment) {
-      return new Response(`Deployment ${slug} not found`, { status: 404 });
+      return new Response(`Deployment for project "${slug}" not found`, {
+        status: 404,
+      });
+    }
+    if (!deployment.output) {
+      return new Response(
+        `Found deployment "${deployment.id}" for project "${slug}" but no output`,
+        {
+          status: 404,
+        }
+      );
     }
     let worker: Fetcher;
     try {
-      worker = env.DISPATCH.get(deployment.workerName, {}, {});
+      worker = env.DISPATCH.get(deployment.output.workerName, {}, {});
     } catch (error) {
       console.error("Invalid deployment", error);
-      return new Response(`Invalid deployment ${deployment.workerName}`, {
-        status: 500,
-      });
+      return new Response(
+        `Invalid deployment ${deployment.output.workerName}`,
+        {
+          status: 500,
+        }
+      );
     }
     try {
-      return await worker.fetch(request);
+      const response = await worker.fetch(request);
+      const headers = new Headers(response.headers);
+      headers.set("functional-project", slug);
+      headers.set("functional-deployment-id", deployment.id);
+      return new Response(response.body, {
+        status: response.status,
+        headers,
+      });
     } catch (error) {
       console.error("Error fetching", error);
-      return new Response(`Error fetching ${deployment.workerName}`, {
+      return new Response(`Error fetching ${deployment.output.workerName}`, {
         status: 500,
       });
     }
