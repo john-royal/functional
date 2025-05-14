@@ -1,7 +1,7 @@
-Bun.serve({
-  hostname: "::",
-  port: process.env.PORT ?? 3000,
-  fetch: async (request) => {
-    return new Response("Hello, world!");
+export default {
+  fetch: async (request: Request) => {
+    return Response.json({
+      message: "Hello, world!",
+    });
   },
-});
+} satisfies Bun.Serve;
