@@ -61,7 +61,7 @@ function RouteComponent() {
   );
 }
 
-function GitNamespace({ team, id }: { team: string; id: string }) {
+function GitNamespace({ team, id }: { team: string; id: number }) {
   const { data } = useQuery(getGitNamespaceQuery(team, id));
   return (
     <div>

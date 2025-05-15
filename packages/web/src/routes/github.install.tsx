@@ -12,20 +12,20 @@ export const Route = createFileRoute("/github/install")({
   loaderDeps: ({ search }) => search,
   loader: async ({ deps }) => {
     return await handleInstall({
-      data: { installationId: deps.installation_id },
+      data: { id: deps.installation_id },
     });
   },
 });
 
 const handleInstall = createServerFn()
-  .validator(z.object({ installationId: z.number() }))
+  .validator(z.object({ id: z.number() }))
   .middleware([authMiddleware])
   .handler(async ({ context, data }) => {
     if (!context.subject) {
       throw redirect({ to: "/auth" });
     }
     const res = await apiFetch(
-      `/teams/${context.subject.properties.defaultTeam.id}/git-namespaces`,
+      `/teams/${context.subject.properties.defaultTeam.id}/git-installations`,
       {
         method: "POST",
         headers: {

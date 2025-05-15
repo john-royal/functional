@@ -24,7 +24,10 @@ export interface HonoEnv {
   Variables: Variables;
 }
 
-export type HonoContext<TPath extends string> = Context<HonoEnv, TPath>;
+export type HonoContext<TPath extends string = string> = Context<
+  HonoEnv,
+  TPath
+>;
 
 export const defineRoute: typeof createRoute = (route) => {
   return createRoute({

@@ -1,5 +1,6 @@
 import { z } from "@hono/zod-openapi";
 import { defineRoute } from "../common";
+import { gitRepositorySchema } from "../git-installations/schema";
 
 export const projectSchema = z
   .object({
@@ -7,12 +8,7 @@ export const projectSchema = z
     name: z.string(),
     slug: z.string(),
     teamId: z.string(),
-    gitRepository: z.object({
-      id: z.number(),
-      name: z.string(),
-      url: z.string(),
-      installationId: z.number(),
-    }),
+    gitRepository: gitRepositorySchema,
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
   })

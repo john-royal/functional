@@ -1,5 +1,5 @@
 import { createDatabaseClient } from "@functional/db/client";
-import { app } from "./hono";
+import { app } from "./routes";
 
 export default {
   async fetch(

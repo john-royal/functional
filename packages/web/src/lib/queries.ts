@@ -1,12 +1,32 @@
 import { queryOptions, type MutationOptions } from "@tanstack/react-query";
 import { apiFetch } from "./api";
 
+type ResponseEnvelope<T> =
+  | {
+      data: T;
+    }
+  | {
+      error: {
+        code: string;
+        message: string;
+        details?: Record<string, unknown>;
+      };
+    };
+
+const parseResponse = async <T>(res: Response) => {
+  const data = await res.json<ResponseEnvelope<T>>();
+  if ("error" in data) {
+    throw new Error(`${data.error.code}: ${data.error.message}`);
+  }
+  return data.data;
+};
+
 export const listTeamsQuery = () =>
   queryOptions({
     queryKey: ["teams"],
     queryFn: async () => {
       const res = await apiFetch("/teams", { method: "GET" });
-      return res.json();
+      return parseResponse<unknown[]>(res);
     },
   });
 
@@ -15,7 +35,7 @@ export const getTeamQuery = (team: string) =>
     queryKey: ["team", team],
     queryFn: async () => {
       const res = await apiFetch(`/teams/${team}`, { method: "GET" });
-      return res.json();
+      return parseResponse<unknown>(res);
     },
   });
 
@@ -26,7 +46,7 @@ export const listTeamProjectsQuery = (team: string) =>
       const res = await apiFetch(`/teams/${team}/projects`, {
         method: "GET",
       });
-      return res.json();
+      return parseResponse<unknown[]>(res);
     },
   });
 
@@ -37,42 +57,47 @@ export const getProjectQuery = (team: string, project: string) =>
       const res = await apiFetch(`/teams/${team}/projects/${project}`, {
         method: "GET",
       });
-      return res.json();
+      return parseResponse<unknown>(res);
     },
   });
 
 export const listGitNamespacesQuery = (team: string) =>
   queryOptions({
-    queryKey: ["team", team, "git-namespaces"],
+    queryKey: ["team", team, "git-installations"],
     queryFn: async () => {
-      const res = await apiFetch(`/teams/${team}/git-namespaces`, {
+      const res = await apiFetch(`/teams/${team}/git-installations`, {
         method: "GET",
       });
-      return res.json();
+      return parseResponse<{ id: number; name: string }[]>(res);
     },
   });
 
-export const getGitNamespaceQuery = (team: string, id: string) =>
+export const getGitNamespaceQuery = (team: string, id: number) =>
   queryOptions({
-    queryKey: ["team", team, "git-namespace", id],
+    queryKey: ["team", team, "git-installations", id],
     queryFn: async () => {
-      const res = await apiFetch(`/teams/${team}/git-namespaces/${id}`, {
+      const res1 = await apiFetch(`/teams/${team}/git-installations/${id}`, {
         method: "GET",
-      });
-      return res.json();
+      }).then((res) => parseResponse<Record<string, unknown>>(res));
+      const res2 = await apiFetch(
+        `/teams/${team}/git-installations/${id}/repositories`,
+        {
+          method: "GET",
+        }
+      ).then((res) => parseResponse<unknown[]>(res));
+      return {
+        ...res1,
+        repositories: res2,
+      };
     },
   });
 
 export const createGitNamespaceMutation = (team: string) =>
   ({
-    mutationFn: async (data) => {
-      const res = await apiFetch(`/teams/${team}/git-namespaces`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+    mutationFn: async () => {
+      const res = await apiFetch(`/teams/${team}/git-installations/redirect`, {
+        method: "GET",
       });
-      return res.json();
+      return parseResponse<{ url: string }>(res);
     },
   }) satisfies MutationOptions<{ url: string }, Error>;

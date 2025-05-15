@@ -4,6 +4,8 @@ import { APIError, type HonoEnv } from "./common";
 import { authMiddleware } from "./middleware";
 import { registerProjectRoutes } from "./projects/handlers";
 import { registerTeamRoutes } from "./teams/handlers";
+import { registerGitInstallationsRoutes } from "./git-installations/handlers";
+import { App } from "octokit";
 
 const app = new OpenAPIHono<HonoEnv>();
 
@@ -34,9 +36,20 @@ app.use(
   })
 );
 app.use(authMiddleware);
+app.use(async (c, next) => {
+  c.set(
+    "github",
+    new App({
+      appId: c.env.GITHUB_APP_ID,
+      privateKey: c.env.GITHUB_PRIVATE_KEY,
+    })
+  );
+  await next();
+});
 
 registerTeamRoutes(app);
 registerProjectRoutes(app);
+registerGitInstallationsRoutes(app);
 
 app.onError((err, c) => {
   const error = APIError.fromUnknown(err);
