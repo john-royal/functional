@@ -14,7 +14,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import { App } from "octokit";
+import { App, Octokit } from "octokit";
 import z from "zod";
 
 interface Bindings {
@@ -221,6 +221,62 @@ export const app = new Hono<{ Bindings: Bindings; Variables: Variables }>()
       return c.json(gitNamespace);
     }
   )
+  .get("/teams/:team/git-namespaces/:gitNamespaceId", async (c) => {
+    const db = c.env.DB;
+    const app = c.get("github");
+    const [gitNamespace] = await db
+      .select()
+      .from(schema.gitNamespaces)
+      .where(eq(schema.gitNamespaces.id, c.req.param("gitNamespaceId")));
+    if (!gitNamespace || gitNamespace.teamId !== c.get("team").id) {
+      throw new HTTPException(404, {
+        message: "Git namespace not found",
+      });
+    }
+    let octokit: Octokit;
+    if (
+      !gitNamespace.token ||
+      !gitNamespace.expiresAt ||
+      gitNamespace.expiresAt < new Date()
+    ) {
+      const token = await app.octokit.rest.apps.createInstallationAccessToken({
+        installation_id: Number(gitNamespace.installationId),
+      });
+      await db
+        .update(schema.gitNamespaces)
+        .set({
+          token: token.data.token,
+          expiresAt: new Date(token.data.expires_at),
+        })
+        .where(eq(schema.gitNamespaces.id, gitNamespace.id));
+      octokit = new Octokit({
+        auth: token.data.token,
+      });
+    } else {
+      octokit = new Octokit({
+        auth: gitNamespace.token,
+      });
+    }
+    const repositories =
+      await octokit.rest.apps.listReposAccessibleToInstallation({
+        per_page: 100,
+      });
+    return c.json({
+      namespace: {
+        id: gitNamespace.id,
+        installationId: gitNamespace.installationId,
+        targetType: gitNamespace.targetType,
+        targetId: gitNamespace.targetId,
+        targetName: gitNamespace.targetName,
+      },
+      repositories: repositories.data.repositories.map((repo) => ({
+        id: repo.id,
+        name: repo.name,
+        fullName: repo.full_name,
+        private: repo.private,
+      })),
+    });
+  })
   .post(
     "/teams/:team/projects",
     sValidator(

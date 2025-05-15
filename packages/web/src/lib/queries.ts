@@ -52,11 +52,26 @@ export const listGitNamespacesQuery = (team: string) =>
     },
   });
 
-export const createGitNamespaceRedirectMutation = (team: string) =>
-  ({
-    mutationFn: async () => {
-      const res = await apiFetch(`/teams/${team}/git-namespaces/redirect`, {
+export const getGitNamespaceQuery = (team: string, id: string) =>
+  queryOptions({
+    queryKey: ["team", team, "git-namespace", id],
+    queryFn: async () => {
+      const res = await apiFetch(`/teams/${team}/git-namespaces/${id}`, {
         method: "GET",
+      });
+      return res.json();
+    },
+  });
+
+export const createGitNamespaceMutation = (team: string) =>
+  ({
+    mutationFn: async (data) => {
+      const res = await apiFetch(`/teams/${team}/git-namespaces`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
       });
       return res.json();
     },
