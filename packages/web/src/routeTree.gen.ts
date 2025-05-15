@@ -14,6 +14,7 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as AppImport } from './routes/_app'
 import { Route as IndexImport } from './routes/index'
 import { Route as AuthIndexImport } from './routes/auth.index'
+import { Route as GithubInstallImport } from './routes/github.install'
 import { Route as AuthCallbackImport } from './routes/auth.callback'
 import { Route as AppTeamImport } from './routes/_app.$team'
 import { Route as AppTeamProjectImport } from './routes/_app.$team.$project'
@@ -34,6 +35,12 @@ const IndexRoute = IndexImport.update({
 const AuthIndexRoute = AuthIndexImport.update({
   id: '/auth/',
   path: '/auth/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const GithubInstallRoute = GithubInstallImport.update({
+  id: '/github/install',
+  path: '/github/install',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -87,6 +94,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackImport
       parentRoute: typeof rootRoute
     }
+    '/github/install': {
+      id: '/github/install'
+      path: '/github/install'
+      fullPath: '/github/install'
+      preLoaderRoute: typeof GithubInstallImport
+      parentRoute: typeof rootRoute
+    }
     '/auth/': {
       id: '/auth/'
       path: '/auth'
@@ -132,6 +146,7 @@ export interface FileRoutesByFullPath {
   '': typeof AppRouteWithChildren
   '/$team': typeof AppTeamRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
+  '/github/install': typeof GithubInstallRoute
   '/auth': typeof AuthIndexRoute
   '/$team/$project': typeof AppTeamProjectRoute
 }
@@ -141,6 +156,7 @@ export interface FileRoutesByTo {
   '': typeof AppRouteWithChildren
   '/$team': typeof AppTeamRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
+  '/github/install': typeof GithubInstallRoute
   '/auth': typeof AuthIndexRoute
   '/$team/$project': typeof AppTeamProjectRoute
 }
@@ -151,6 +167,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/_app/$team': typeof AppTeamRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
+  '/github/install': typeof GithubInstallRoute
   '/auth/': typeof AuthIndexRoute
   '/_app/$team/$project': typeof AppTeamProjectRoute
 }
@@ -162,16 +179,25 @@ export interface FileRouteTypes {
     | ''
     | '/$team'
     | '/auth/callback'
+    | '/github/install'
     | '/auth'
     | '/$team/$project'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '' | '/$team' | '/auth/callback' | '/auth' | '/$team/$project'
+  to:
+    | '/'
+    | ''
+    | '/$team'
+    | '/auth/callback'
+    | '/github/install'
+    | '/auth'
+    | '/$team/$project'
   id:
     | '__root__'
     | '/'
     | '/_app'
     | '/_app/$team'
     | '/auth/callback'
+    | '/github/install'
     | '/auth/'
     | '/_app/$team/$project'
   fileRoutesById: FileRoutesById
@@ -181,6 +207,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AuthCallbackRoute: typeof AuthCallbackRoute
+  GithubInstallRoute: typeof GithubInstallRoute
   AuthIndexRoute: typeof AuthIndexRoute
 }
 
@@ -188,6 +215,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthCallbackRoute: AuthCallbackRoute,
+  GithubInstallRoute: GithubInstallRoute,
   AuthIndexRoute: AuthIndexRoute,
 }
 
@@ -204,6 +232,7 @@ export const routeTree = rootRoute
         "/",
         "/_app",
         "/auth/callback",
+        "/github/install",
         "/auth/"
       ]
     },
@@ -225,6 +254,9 @@ export const routeTree = rootRoute
     },
     "/auth/callback": {
       "filePath": "auth.callback.tsx"
+    },
+    "/github/install": {
+      "filePath": "github.install.tsx"
     },
     "/auth/": {
       "filePath": "auth.index.tsx"

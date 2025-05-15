@@ -1,29 +1,5 @@
-import { queryOptions } from "@tanstack/react-query";
-import { authState } from "./auth";
-
-declare global {
-  var token: string;
-}
-
-const apiFetch = async (path: string, options?: RequestInit) => {
-  if (typeof window === "undefined") {
-    const { env } = await import("cloudflare:workers");
-    const { token } = await authState();
-    const url = new URL(path, env.API_URL);
-    return env.API.fetch(url, {
-      ...options,
-      headers: {
-        ...options?.headers,
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  }
-  const url = new URL(path, import.meta.env.VITE_API_URL);
-  return fetch(url, {
-    ...options,
-    headers: { Authorization: `Bearer ${window.token}`, ...options?.headers },
-  });
-};
+import { queryOptions, type MutationOptions } from "@tanstack/react-query";
+import { apiFetch } from "./api";
 
 export const listTeamsQuery = () =>
   queryOptions({
@@ -64,3 +40,24 @@ export const getProjectQuery = (team: string, project: string) =>
       return res.json();
     },
   });
+
+export const listGitNamespacesQuery = (team: string) =>
+  queryOptions({
+    queryKey: ["team", team, "git-namespaces"],
+    queryFn: async () => {
+      const res = await apiFetch(`/teams/${team}/git-namespaces`, {
+        method: "GET",
+      });
+      return res.json();
+    },
+  });
+
+export const createGitNamespaceRedirectMutation = (team: string) =>
+  ({
+    mutationFn: async () => {
+      const res = await apiFetch(`/teams/${team}/git-namespaces/redirect`, {
+        method: "GET",
+      });
+      return res.json();
+    },
+  }) satisfies MutationOptions<{ url: string }, Error>;

@@ -175,7 +175,7 @@ export const app = new Hono<{ Bindings: Bindings; Variables: Variables }>()
   })
   .get("/teams/:team/git-namespaces/redirect", async (c) => {
     const url = await c.get("github").getInstallationUrl();
-    return c.redirect(url);
+    return c.json({ url });
   })
   .post(
     "/teams/:team/git-namespaces",

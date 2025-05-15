@@ -2,7 +2,7 @@ import { authState } from "@/lib/auth";
 import { createFileRoute, redirect, ScriptOnce } from "@tanstack/react-router";
 import { useLayoutEffect } from "react";
 import { Outlet } from "@tanstack/react-router";
-import { listTeamsQuery } from "@/lib/query";
+import { listTeamsQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/_app")({
   component: RouteComponent,
