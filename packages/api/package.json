@@ -20,6 +20,7 @@
     "@functional/auth": "workspace:*",
     "@functional/db": "workspace:*",
     "@hono/standard-validator": "^0.1.2",
+    "@hono/zod-openapi": "^0.19.6",
     "@paralleldrive/cuid2": "^2.2.2",
     "hono": "^4.7.9",
     "octokit": "^4.1.3",

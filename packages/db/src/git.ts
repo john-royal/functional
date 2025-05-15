@@ -2,6 +2,7 @@ import {
   bigint,
   pgEnum,
   pgTable,
+  primaryKey,
   timestamp,
   unique,
   varchar,
@@ -14,12 +15,11 @@ export const gitTargetType = pgEnum("git_target_type", [
   "user",
 ]);
 
-export const gitNamespaces = pgTable("git_namespaces", {
-  id: cuid().primaryKey(),
+export const gitInstallations = pgTable("git_installations", {
+  id: bigint({ mode: "number" }).primaryKey(),
   teamId: cuid()
     .notNull()
     .references(() => teams.id),
-  installationId: bigint({ mode: "number" }).notNull().unique(),
   targetType: gitTargetType().notNull(),
   targetId: bigint({ mode: "number" }).notNull(),
   targetName: varchar({ length: 255 }).notNull(),
@@ -31,13 +31,13 @@ export const gitNamespaces = pgTable("git_namespaces", {
 export const gitRepositories = pgTable(
   "git_repositories",
   {
-    id: cuid().primaryKey(),
-    namespaceId: cuid()
+    id: bigint({ mode: "number" }).notNull(),
+    installationId: bigint({ mode: "number" })
       .notNull()
-      .references(() => gitNamespaces.id),
-    githubRepositoryId: bigint({ mode: "number" }).notNull(),
+      .references(() => gitInstallations.id),
     name: varchar({ length: 255 }).notNull(),
+    url: varchar({ length: 255 }).notNull(),
     ...timestamps(),
   },
-  (t) => [unique().on(t.namespaceId, t.githubRepositoryId)]
+  (t) => [primaryKey({ columns: [t.installationId, t.id] })]
 );

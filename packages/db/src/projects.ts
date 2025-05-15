@@ -1,4 +1,5 @@
 import {
+  bigint,
   boolean,
   pgEnum,
   pgTable,
@@ -6,8 +7,8 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { cuid, timestamps } from "./columns";
-import { teams } from "./teams";
 import { gitRepositories } from "./git";
+import { teams } from "./teams";
 
 export const projects = pgTable("projects", {
   id: cuid().primaryKey(),
@@ -16,7 +17,7 @@ export const projects = pgTable("projects", {
   teamId: cuid()
     .notNull()
     .references(() => teams.id),
-  gitRepositoryId: cuid()
+  gitRepositoryId: bigint({ mode: "number" })
     .notNull()
     .references(() => gitRepositories.id),
   ...timestamps(),
