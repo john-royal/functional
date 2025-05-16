@@ -29,8 +29,6 @@ export const deployments = pgTable(
       ref: string;
       sha?: string;
       message: string;
-      authorName: string;
-      authorEmail: string;
     }>(),
     output: jsonb().$type<{
       workerName: string;

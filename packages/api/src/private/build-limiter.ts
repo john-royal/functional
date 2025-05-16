@@ -3,6 +3,7 @@ import {
   eq,
   getTableColumns,
   notInArray,
+  type InsertModel,
   type SelectModel,
 } from "@functional/db";
 import { createDatabaseClient, type Database } from "@functional/db/client";
@@ -15,6 +16,7 @@ export class BuildLimiter extends DurableObject<Env> {
   db: Database;
   teamId: string;
   deployments: SelectModel<"deployments">[] = [];
+  concurrentDeployments: number = 0;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -36,11 +38,10 @@ export class BuildLimiter extends DurableObject<Env> {
               "success",
             ])
           )
-        )
-        .catch((err) => {
-          console.error("Error fetching deployments", err);
-          return [];
-        });
+        );
+      this.concurrentDeployments = this.deployments.filter(
+        (deployment) => deployment.status === "building"
+      ).length;
     });
   }
 
@@ -50,5 +51,16 @@ export class BuildLimiter extends DurableObject<Env> {
 
   async getDeployments() {
     return this.deployments;
+  }
+
+  async createDeployment(input: InsertModel<"deployments">) {
+    const [deployment] = await this.db
+      .insert(schema.deployments)
+      .values(input)
+      .returning();
+    if (!deployment) {
+      throw new Error("Failed to create deployment");
+    }
+    this.deployments.push(deployment);
   }
 }
