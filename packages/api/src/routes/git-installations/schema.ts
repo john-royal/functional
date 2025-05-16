@@ -1,9 +1,12 @@
 import { z } from "@hono/zod-openapi";
 import { defineRoute } from "../common";
+import { teamParamsSchema } from "../teams/schema";
 
-export const gitInstallationParamSchema = z.object({
-  id: z.coerce.number(),
-});
+export const gitInstallationParamSchema = teamParamsSchema
+  .extend({
+    id: z.coerce.number(),
+  })
+  .openapi("GitInstallationParams");
 
 export const gitInstallationSchema = z
   .object({
@@ -28,15 +31,16 @@ export const gitRepositorySchema = z
 
 export const listGitInstallationsRoute = defineRoute({
   method: "get",
-  path: "/teams/:team/git-installations",
+  path: "/teams/{team}/git-installations",
+  request: {
+    params: teamParamsSchema,
+  },
   responses: {
     200: {
       description: "List of git installations",
       content: {
         "application/json": {
-          schema: z.object({
-            data: z.array(gitInstallationSchema),
-          }),
+          schema: z.array(gitInstallationSchema),
         },
       },
     },
@@ -45,16 +49,17 @@ export const listGitInstallationsRoute = defineRoute({
 
 export const getGitInstallationRedirectRoute = defineRoute({
   method: "get",
-  path: "/teams/:team/git-installations/redirect",
+  path: "/teams/{team}/git-installations/redirect",
+  request: {
+    params: teamParamsSchema,
+  },
   responses: {
     200: {
       description: "Git installation redirect",
       content: {
         "application/json": {
           schema: z.object({
-            data: z.object({
-              url: z.string(),
-            }),
+            url: z.string(),
           }),
         },
       },
@@ -64,8 +69,9 @@ export const getGitInstallationRedirectRoute = defineRoute({
 
 export const createGitInstallationRoute = defineRoute({
   method: "post",
-  path: "/teams/:team/git-installations",
+  path: "/teams/{team}/git-installations",
   request: {
+    params: teamParamsSchema,
     body: {
       content: {
         "application/json": {
@@ -80,9 +86,7 @@ export const createGitInstallationRoute = defineRoute({
       content: {
         "application/json": {
           schema: z.object({
-            data: z.object({
-              id: z.number(),
-            }),
+            id: z.number(),
           }),
         },
       },
@@ -92,7 +96,7 @@ export const createGitInstallationRoute = defineRoute({
 
 export const getGitInstallationRoute = defineRoute({
   method: "get",
-  path: "/teams/:team/git-installations/:id",
+  path: "/teams/{team}/git-installations/{id}",
   request: {
     params: gitInstallationParamSchema,
   },
@@ -101,9 +105,7 @@ export const getGitInstallationRoute = defineRoute({
       description: "Git installation",
       content: {
         "application/json": {
-          schema: z.object({
-            data: gitInstallationSchema,
-          }),
+          schema: gitInstallationSchema,
         },
       },
     },
@@ -112,7 +114,7 @@ export const getGitInstallationRoute = defineRoute({
 
 export const deleteGitInstallationRoute = defineRoute({
   method: "delete",
-  path: "/teams/:team/git-installations/:id",
+  path: "/teams/{team}/git-installations/{id}",
   request: {
     params: gitInstallationParamSchema,
   },
@@ -122,9 +124,7 @@ export const deleteGitInstallationRoute = defineRoute({
       content: {
         "application/json": {
           schema: z.object({
-            data: z.object({
-              id: z.number(),
-            }),
+            id: z.number(),
           }),
         },
       },
@@ -134,7 +134,7 @@ export const deleteGitInstallationRoute = defineRoute({
 
 export const listGitRepositoriesRoute = defineRoute({
   method: "get",
-  path: "/teams/:team/git-installations/:id/repositories",
+  path: "/teams/{team}/git-installations/{id}/repositories",
   request: {
     params: gitInstallationParamSchema,
   },
@@ -143,9 +143,7 @@ export const listGitRepositoriesRoute = defineRoute({
       description: "List of git repositories",
       content: {
         "application/json": {
-          schema: z.object({
-            data: z.array(gitRepositorySchema),
-          }),
+          schema: z.array(gitRepositorySchema),
         },
       },
     },

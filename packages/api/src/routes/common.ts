@@ -1,6 +1,6 @@
 import type { Subject } from "@functional/auth/client";
 import type { Database } from "@functional/db/client";
-import { createRoute } from "@hono/zod-openapi";
+import { createRoute, z } from "@hono/zod-openapi";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { App } from "octokit";
@@ -29,13 +29,26 @@ export type HonoContext<TPath extends string = string> = Context<
   TPath
 >;
 
+export const ErrorResponsePayload = z
+  .object({
+    message: z.string(),
+    code: z.string(),
+    details: z.record(z.string(), z.any()).optional(),
+  })
+  .openapi("ErrorResponsePayload");
+
 export const defineRoute: typeof createRoute = (route) => {
   return createRoute({
     ...route,
     responses: {
       ...route.responses,
       default: {
-        $ref: "#/components/responses/ErrorResponse",
+        description: "An error response",
+        content: {
+          "application/json": {
+            schema: ErrorResponsePayload,
+          },
+        },
       },
     },
   });

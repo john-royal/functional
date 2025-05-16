@@ -1,13 +1,13 @@
 import { z } from "@hono/zod-openapi";
 import { defineRoute } from "../common";
 
-const teamParamsSchema = z
+export const teamParamsSchema = z
   .object({
-    team: z.string(),
+    team: z.string().openapi({
+      description: "Team ID or slug",
+    }),
   })
-  .openapi("TeamParams", {
-    description: "Team ID or slug",
-  });
+  .openapi("TeamParams");
 
 const teamSchema = z
   .object({
@@ -29,9 +29,7 @@ export const listTeamsRoute = defineRoute({
       description: "Teams",
       content: {
         "application/json": {
-          schema: z.object({
-            data: z.array(teamSchema),
-          }),
+          schema: z.array(teamSchema),
         },
       },
     },
@@ -49,9 +47,7 @@ export const getTeamRoute = defineRoute({
       description: "Team",
       content: {
         "application/json": {
-          schema: z.object({
-            data: teamSchema,
-          }),
+          schema: teamSchema,
         },
       },
     },
@@ -80,16 +76,10 @@ export const createTeamRoute = defineRoute({
       content: {
         "application/json": {
           schema: z.object({
-            data: z.object({
-              id: z.string(),
-            }),
+            id: z.string(),
           }),
         },
       },
-    },
-    409: {
-      description: "Team already exists",
-      $ref: "#/components/responses/ErrorResponse",
     },
   },
 });
@@ -106,7 +96,7 @@ export const deleteTeamRoute = defineRoute({
       content: {
         "application/json": {
           schema: z.object({
-            data: z.object({ id: z.string() }),
+            id: z.string(),
           }),
         },
       },

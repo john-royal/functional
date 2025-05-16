@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from "@/api/fetch";
 import { authMiddleware } from "@/lib/auth";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
@@ -24,17 +24,25 @@ const handleInstall = createServerFn()
     if (!context.subject) {
       throw redirect({ to: "/auth" });
     }
-    const res = await apiFetch(
-      `/teams/${context.subject.properties.defaultTeam.id}/git-installations`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+    const res = await apiFetch.POST("/teams/{team}/git-installations", {
+      params: {
+        path: {
+          team: context.subject.properties.defaultTeam.id,
         },
-        body: JSON.stringify(data),
-      }
-    );
-    return res.json();
+        body: {
+          id: data.id,
+        },
+      },
+    });
+    return {
+      data: res.data,
+      error: res.error
+        ? {
+            message: res.error.message,
+            code: res.error.code,
+          }
+        : undefined,
+    };
   });
 
 function RouteComponent() {

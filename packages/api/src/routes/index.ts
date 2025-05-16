@@ -9,16 +9,6 @@ import { App } from "octokit";
 
 const app = new OpenAPIHono<HonoEnv>();
 
-app.openAPIRegistry.register(
-  "ErrorResponse",
-  z.object({
-    error: z.object({
-      message: z.string(),
-      code: z.string(),
-      details: z.record(z.string(), z.any()).optional(),
-    }),
-  })
-);
 app.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", {
   type: "http",
   scheme: "bearer",

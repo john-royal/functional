@@ -48,6 +48,7 @@ export class BuildController {
   }
 
   async rebuild() {
+    console.log(`[${this.options.name}] rebuild`);
     const result = await this.build();
     this.options.onUpdate(result);
   }

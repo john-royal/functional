@@ -1,6 +1,7 @@
 import { z } from "@hono/zod-openapi";
 import { defineRoute } from "../common";
 import { gitRepositorySchema } from "../git-installations/schema";
+import { teamParamsSchema } from "../teams/schema";
 
 export const projectSchema = z
   .object({
@@ -16,15 +17,16 @@ export const projectSchema = z
 
 export const listProjectsRoute = defineRoute({
   method: "get",
-  path: "/teams/:team/projects",
+  path: "/teams/{team}/projects",
+  request: {
+    params: teamParamsSchema,
+  },
   responses: {
     200: {
       description: "Projects",
       content: {
         "application/json": {
-          schema: z.object({
-            data: z.array(projectSchema),
-          }),
+          schema: z.array(projectSchema),
         },
       },
     },
@@ -33,8 +35,9 @@ export const listProjectsRoute = defineRoute({
 
 export const createProjectRoute = defineRoute({
   method: "post",
-  path: "/teams/:team/projects",
+  path: "/teams/{team}/projects",
   request: {
+    params: teamParamsSchema,
     body: {
       content: {
         "application/json": {
@@ -54,9 +57,7 @@ export const createProjectRoute = defineRoute({
       content: {
         "application/json": {
           schema: z.object({
-            data: z.object({
-              id: z.string(),
-            }),
+            id: z.string(),
           }),
         },
       },
@@ -64,17 +65,24 @@ export const createProjectRoute = defineRoute({
   },
 });
 
+const projectParamsSchema = teamParamsSchema
+  .extend({
+    project: z.string(),
+  })
+  .openapi("ProjectParams");
+
 export const getProjectRoute = defineRoute({
   method: "get",
-  path: "/teams/:team/projects/:project",
+  path: "/teams/{team}/projects/{project}",
+  request: {
+    params: projectParamsSchema,
+  },
   responses: {
     200: {
       description: "Project",
       content: {
         "application/json": {
-          schema: z.object({
-            data: projectSchema,
-          }),
+          schema: projectSchema,
         },
       },
     },
@@ -83,16 +91,17 @@ export const getProjectRoute = defineRoute({
 
 export const deleteProjectRoute = defineRoute({
   method: "delete",
-  path: "/teams/:team/projects/:project",
+  path: "/teams/{team}/projects/{project}",
+  request: {
+    params: projectParamsSchema,
+  },
   responses: {
     200: {
       description: "Project deleted",
       content: {
         "application/json": {
           schema: z.object({
-            data: z.object({
-              id: z.string(),
-            }),
+            id: z.string(),
           }),
         },
       },

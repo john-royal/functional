@@ -80,6 +80,7 @@ const setTokens = (tokens: Tokens) => {
 const clearTokens = () => {
   deleteCookie("access_token");
   deleteCookie("refresh_token");
+  deleteCookie("token_expires_at");
 };
 
 interface AuthenticatedContext {

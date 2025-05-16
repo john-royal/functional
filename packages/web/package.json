@@ -10,7 +10,8 @@
     "test": "vitest run",
     "format": "biome format",
     "lint": "biome lint",
-    "check": "biome check"
+    "check": "biome check",
+    "generate-openapi": "openapi-typescript http://localhost:3001/docs -o src/api/openapi.gen.ts && biome check --fix src/api/openapi.gen.ts"
   },
   "dependencies": {
     "@functional/auth": "workspace:*",
@@ -24,6 +25,8 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.476.0",
+    "openapi-fetch": "^0.14.0",
+    "openapi-react-query": "^0.5.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^3.0.2",
@@ -43,6 +46,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "alchemy": "^0.16.2",
     "jsdom": "^26.0.0",
+    "openapi-typescript": "^7.8.0",
     "typescript": "^5.7.2",
     "vite": "^6.1.0",
     "vitest": "^3.0.5",

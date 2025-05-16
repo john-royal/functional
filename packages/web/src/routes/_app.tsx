@@ -1,5 +1,5 @@
+import { $api } from "@/api/fetch";
 import { authState } from "@/lib/auth";
-import { listTeamsQuery } from "@/lib/queries";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_app")({
@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_app")({
     if (!subject) {
       throw redirect({ to: "/auth" });
     }
-    void context.queryClient.prefetchQuery(listTeamsQuery());
+    void context.queryClient.prefetchQuery($api.queryOptions("get", "/teams"));
   },
 });
 

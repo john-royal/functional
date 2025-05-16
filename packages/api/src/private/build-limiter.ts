@@ -20,10 +20,6 @@ export class BuildLimiter extends DurableObject<Env> {
     super(ctx, env);
     assert(ctx.id.name, "BuildLimiter must be initialized with a name");
     this.teamId = ctx.id.name;
-    console.log("BuildLimiter constructor", {
-      teamId: this.teamId,
-      connectionString: env.HYPERDRIVE.connectionString,
-    });
     this.db = createDatabaseClient(env.HYPERDRIVE.connectionString);
     ctx.blockConcurrencyWhile(async () => {
       this.deployments = await this.db

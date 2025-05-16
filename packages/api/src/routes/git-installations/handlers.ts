@@ -22,7 +22,7 @@ export const registerGitInstallationsRoutes = (app: OpenAPIHono<HonoEnv>) => {
     const installations = await c.env.DB.select(columns)
       .from(schema.gitInstallations)
       .where(eq(schema.gitInstallations.teamId, team.id));
-    return c.json({ data: installations }, 200);
+    return c.json(installations, 200);
   });
 
   app.openapi(getGitInstallationRedirectRoute, async (c) => {
@@ -30,7 +30,7 @@ export const registerGitInstallationsRoutes = (app: OpenAPIHono<HonoEnv>) => {
       c.get("github").getInstallationUrl(),
       validateTeam(c),
     ]);
-    return c.json({ data: { url } }, 200);
+    return c.json({ url }, 200);
   });
 
   const createInstallationAccessToken = async (
@@ -115,7 +115,7 @@ export const registerGitInstallationsRoutes = (app: OpenAPIHono<HonoEnv>) => {
           : installation.data.account.name,
       ...token,
     });
-    return c.json({ data: { id: body.id } }, 200);
+    return c.json({ id: body.id }, 200);
   });
 
   app.openapi(getGitInstallationRoute, async (c) => {
@@ -129,7 +129,7 @@ export const registerGitInstallationsRoutes = (app: OpenAPIHono<HonoEnv>) => {
         message: "Installation not found",
       });
     }
-    return c.json({ data: installation }, 200);
+    return c.json(installation, 200);
   });
 
   app.openapi(deleteGitInstallationRoute, async (c) => {
@@ -157,7 +157,7 @@ export const registerGitInstallationsRoutes = (app: OpenAPIHono<HonoEnv>) => {
         .delete(schema.gitInstallations)
         .where(eq(schema.gitInstallations.id, id));
     });
-    return c.json({ data: { id } }, 200);
+    return c.json({ id }, 200);
   });
 
   app.openapi(listGitRepositoriesRoute, async (c) => {
@@ -165,14 +165,12 @@ export const registerGitInstallationsRoutes = (app: OpenAPIHono<HonoEnv>) => {
     const repositories =
       await octokit.rest.apps.listReposAccessibleToInstallation();
     return c.json(
-      {
-        data: repositories.data.repositories.map((r) => ({
-          id: r.id,
-          name: r.name,
-          url: r.html_url,
-          installationId: c.req.valid("param").id,
-        })),
-      },
+      repositories.data.repositories.map((r) => ({
+        id: r.id,
+        name: r.name,
+        url: r.html_url,
+        installationId: c.req.valid("param").id,
+      })),
       200
     );
   });

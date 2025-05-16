@@ -34,6 +34,13 @@ const miniflare = new MiniflareController({
             },
           },
         },
+        durableObjects: {
+          BUILD_LIMITER: {
+            className: "BuildLimiter",
+            useSQLite: true,
+            scriptName: "private-api",
+          },
+        },
         bindings: sharedBindings,
       },
     },

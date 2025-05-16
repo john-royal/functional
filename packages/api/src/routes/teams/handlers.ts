@@ -18,12 +18,7 @@ export const registerTeamRoutes = (app: OpenAPIHono<HonoEnv>) => {
       .where(eq(schema.teamMembers.userId, c.get("subject").properties.id))
       .innerJoin(schema.teams, eq(schema.teamMembers.teamId, schema.teams.id));
 
-    return c.json(
-      {
-        data,
-      },
-      200
-    );
+    return c.json(data, 200);
   });
 
   app.openapi(getTeamRoute, async (c) => {
@@ -40,12 +35,7 @@ export const registerTeamRoutes = (app: OpenAPIHono<HonoEnv>) => {
       });
     }
 
-    return c.json(
-      {
-        data,
-      },
-      200
-    );
+    return c.json(data, 200);
   });
 
   app.openapi(createTeamRoute, async (c) => {
@@ -79,12 +69,7 @@ export const registerTeamRoutes = (app: OpenAPIHono<HonoEnv>) => {
         role: "owner",
       });
     });
-    return c.json(
-      {
-        data: { id: teamId },
-      },
-      201
-    );
+    return c.json({ id: teamId }, 201);
   });
 
   app.openapi(deleteTeamRoute, async (c) => {
@@ -130,11 +115,6 @@ export const registerTeamRoutes = (app: OpenAPIHono<HonoEnv>) => {
       await tx.delete(schema.teams).where(eq(schema.teams.id, team.id));
       return team;
     });
-    return c.json(
-      {
-        data: { id: team.id },
-      },
-      200
-    );
+    return c.json({ id: team.id }, 200);
   });
 };

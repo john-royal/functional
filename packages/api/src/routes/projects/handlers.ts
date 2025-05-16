@@ -35,7 +35,7 @@ export const registerProjectRoutes = (app: OpenAPIHono<HonoEnv>) => {
         schema.gitRepositories,
         eq(schema.projects.gitRepositoryId, schema.gitRepositories.id)
       );
-    return c.json({ data }, 200);
+    return c.json(data, 200);
   });
 
   app.openapi(createProjectRoute, async (c) => {
@@ -79,7 +79,7 @@ export const registerProjectRoutes = (app: OpenAPIHono<HonoEnv>) => {
           throw error;
         });
     });
-    return c.json({ data: { id } }, 201);
+    return c.json({ id }, 201);
   });
 
   app.openapi(getProjectRoute, async (c) => {
@@ -116,7 +116,7 @@ export const registerProjectRoutes = (app: OpenAPIHono<HonoEnv>) => {
     if (!project || project.teamId !== team.id) {
       throw new APIError({ code: "NOT_FOUND", message: "Project not found" });
     }
-    return c.json({ data: project }, 200);
+    return c.json(project, 200);
   });
 
   app.openapi(deleteProjectRoute, async (c) => {
@@ -134,6 +134,6 @@ export const registerProjectRoutes = (app: OpenAPIHono<HonoEnv>) => {
         .returning({ id: schema.projects.id });
       return project;
     });
-    return c.json({ data: { id: project.id } }, 200);
+    return c.json({ id: project.id }, 200);
   });
 };
