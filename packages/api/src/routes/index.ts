@@ -18,13 +18,11 @@ app.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", {
 app.use(
   cors({
     origin: (_, c) => {
-      if (c.env.USE_LOCAL_CORS) {
-        return "http://localhost:3000";
-      }
-      return "https://web.johnroyal.workers.dev";
+      return c.env.FRONTEND_URL;
     },
   })
 );
+
 app.use(authMiddleware);
 app.use(async (c, next) => {
   c.set(

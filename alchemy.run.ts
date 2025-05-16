@@ -28,9 +28,6 @@ const db = await app.run(async (scope) => {
       user: db.connection_uris[0].connection_parameters.user,
       password: db.connection_uris[0].connection_parameters.password,
     },
-    caching: {
-      disabled: true,
-    },
   });
   const pooledConnectionString =
     db.connection_uris[0].connection_uri.unencrypted.replace(
@@ -81,6 +78,18 @@ const api = await Worker("api", {
     HYPERDRIVE: db.hyperdrive,
     GITHUB_APP_ID: alchemy.secret(process.env.GITHUB_APP_ID),
     GITHUB_PRIVATE_KEY: alchemy.secret(process.env.GITHUB_PRIVATE_KEY),
+    FRONTEND_URL: "https://web.johnroyal.workers.dev",
+  },
+  observability: { enabled: true },
+  compatibilityFlags: ["nodejs_compat"],
+  url: true,
+});
+
+const internal = await Worker("internal", {
+  name: "internal",
+  entrypoint: "./packages/api/src/private/index.ts",
+  bindings: {
+    GITHUB_WEBHOOK_SECRET: alchemy.secret(process.env.GITHUB_WEBHOOK_SECRET),
   },
   observability: { enabled: true },
   compatibilityFlags: ["nodejs_compat"],

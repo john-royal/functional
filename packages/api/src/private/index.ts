@@ -1,18 +1,16 @@
 import { Hono } from "hono";
 import type { Env } from "./types";
+import { githubRouter } from "./github";
 
 const app = new Hono();
 app.get("/", (c) => c.text("test"));
+app.route("/github", githubRouter);
 
 export default {
   async fetch(req, env, ctx) {
-    const id = env.BUILD_LIMITER.idFromName("test");
-    const buildLimiter = env.BUILD_LIMITER.get(id);
-    return Response.json({
-      buildLimiter: await buildLimiter.getDeployments(),
-    });
     return app.fetch(req, env, ctx);
   },
+  async queue(msg, env, ctx) {},
 } satisfies ExportedHandler<Env>;
 
 export { BuildLimiter } from "./build-limiter";

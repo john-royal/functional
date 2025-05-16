@@ -11,7 +11,7 @@ interface Bindings {
   HYPERDRIVE: Hyperdrive;
   GITHUB_APP_ID: string;
   GITHUB_PRIVATE_KEY: string;
-  USE_LOCAL_CORS?: boolean;
+  FRONTEND_URL: string;
 }
 
 interface Variables {

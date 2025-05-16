@@ -8,7 +8,6 @@ const sharedBindings = {
   HYPERDRIVE: {
     connectionString: process.env.DATABASE_URL!,
   },
-  USE_LOCAL_CORS: true,
 };
 
 const miniflare = new MiniflareController({
@@ -41,7 +40,10 @@ const miniflare = new MiniflareController({
             scriptName: "private-api",
           },
         },
-        bindings: sharedBindings,
+        bindings: {
+          ...sharedBindings,
+          FRONTEND_URL: "http://localhost:3000",
+        },
       },
     },
     {

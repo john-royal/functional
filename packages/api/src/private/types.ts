@@ -6,4 +6,6 @@ export interface Env {
   HYPERDRIVE: Hyperdrive;
   BUILD_LIMITER: DurableObjectNamespace<BuildLimiter>;
   BUILD_COORDINATOR: DurableObjectNamespace<BuildCoordinator>;
+  GITHUB_WEBHOOK_SECRET: string;
+  GITHUB_QUEUE: Queue;
 }
