@@ -3,11 +3,12 @@ import { cuid, timestamps } from "./columns";
 import { projects } from "./projects";
 
 export const deploymentStatus = pgEnum("deployment_status", [
-  "pending",
+  "queued",
   "building",
   "deploying",
   "success",
   "failed",
+  "canceled",
 ]);
 
 export const deploymentTrigger = pgEnum("deployment_trigger", [

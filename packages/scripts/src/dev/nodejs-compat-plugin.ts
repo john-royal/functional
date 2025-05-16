@@ -132,7 +132,7 @@ function handleUnenvAliasedPackages(
   );
 
   build.onResolve({ filter: UNENV_ALIAS_RE }, (args) => {
-    const unresolvedAlias = alias[args.path];
+    const unresolvedAlias = alias[args.path]!;
     // Convert `require()` calls for NPM packages to a virtual ES Module that can be imported avoiding the require calls.
     // Note: Does not apply to Node.js packages that are handled in `handleRequireCallsToNodeJSBuiltins`
     if (

@@ -16,7 +16,7 @@ const devBindingsPlugin: PluginOption = {
       return `export const env = {
         FRONTEND_URL: "http://localhost:3000",
         AUTH_URL: "https://auth.johnroyal.workers.dev",
-        API_URL: "http://localhost:8001",
+        API_URL: "${process.env.VITE_API_URL}",
         AUTH: {
           fetch: (url, init) => {
             const rewrite = new URL(url);
@@ -27,9 +27,7 @@ const devBindingsPlugin: PluginOption = {
         },
         API: {
           fetch: (url, init) => {
-            const rewrite = new URL(url);
-            rewrite.host = "localhost:8001";
-            rewrite.protocol = "http";
+            const rewrite = new URL(url, "${process.env.VITE_API_URL}");
             return fetch(rewrite, init);
           },
         },

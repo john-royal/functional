@@ -2,25 +2,19 @@
   "name": "functional-platform",
   "module": "index.ts",
   "devDependencies": {
-    "@cloudflare/unenv-preset": "^2.3.1",
     "@cloudflare/workers-types": "^4.20250514.0",
     "@types/bun": "latest",
     "@types/node": "22",
     "alchemy": "^0.16.2",
     "cloudflare": "^4.2.0",
-    "esbuild": "^0.25.4",
-    "miniflare": "^4.20250508.0",
-    "ts-dedent": "^2.2.0",
-    "turbo": "^2.5.3",
-    "unenv": "^2.0.0-rc.17",
-    "wrangler": "^4.14.4"
+    "turbo": "^2.5.3"
   },
   "peerDependencies": {
     "typescript": "^5.8.3"
   },
   "packageManager": "bun@1.2.13",
   "scripts": {
-    "dev": "bun run scripts/dev.ts",
+    "dev": "bun run packages/scripts/src/dev/index.ts",
     "deploy": "bun run alchemy.run.ts"
   },
   "private": true,

@@ -1,0 +1,16 @@
+{
+  "name": "@functional/scripts",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "esbuild": "^0.25.4",
+    "miniflare": "^4.20250508.2",
+    "ts-dedent": "^2.2.0",
+    "unenv": "^2.0.0-rc.17"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

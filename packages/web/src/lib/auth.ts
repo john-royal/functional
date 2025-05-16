@@ -36,7 +36,6 @@ const authClient = new AuthClient({
       cf: { cacheEverything: url.includes("/.well-known") },
     });
     const text = await res.text();
-    console.log("this is the res", text);
     return new Response(text, {
       status: res.status,
       headers: res.headers,

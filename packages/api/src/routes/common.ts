@@ -1,5 +1,5 @@
 import type { Subject } from "@functional/auth/client";
-import type { Database } from "@functional/db/neon";
+import type { Database } from "@functional/db/client";
 import { createRoute } from "@hono/zod-openapi";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -11,7 +11,7 @@ interface Bindings {
   HYPERDRIVE: Hyperdrive;
   GITHUB_APP_ID: string;
   GITHUB_PRIVATE_KEY: string;
-  LOCAL?: boolean;
+  USE_LOCAL_CORS?: boolean;
 }
 
 interface Variables {
