@@ -37,6 +37,15 @@ export default {
         return ctx.subject("user", user);
       },
     });
+    if (request.url.includes("/.well-known")) {
+      const cached = await caches.default.match(request);
+      if (cached) {
+        return cached;
+      }
+      const res = await app.fetch(request, env, ctx);
+      await caches.default.put(request, res.clone());
+      return res;
+    }
     return await app.fetch(request, env, ctx);
   },
 };

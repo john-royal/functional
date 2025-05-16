@@ -31,24 +31,28 @@ const authClient = new AuthClient({
   issuer: env.AUTH_URL,
   redirectURI: `${env.FRONTEND_URL}/auth/callback`,
   fetch: async (url, options) => {
-    const res = await env.AUTH.fetch(url, {
-      ...options,
-      cf: { cacheEverything: url.includes("/.well-known") },
-    });
-    const text = await res.text();
-    return new Response(text, {
-      status: res.status,
-      headers: res.headers,
-    });
+    if (url.includes("/.well-known")) {
+      return env.AUTH.fetch(url, {
+        ...options,
+        cf: { cacheEverything: true },
+      });
+    }
+    return await env.AUTH.fetch(url, options);
   },
 });
 
-const getTokens = (): { access: string; refresh: string } | undefined => {
+const getTokens = ():
+  | {
+      access: string;
+      refresh: string;
+      expiresAt: number;
+    }
+  | undefined => {
   const access = getCookie("access_token");
   const refresh = getCookie("refresh_token");
-
-  if (access && refresh) {
-    return { access, refresh };
+  const expiresAt = getCookie("token_expires_at");
+  if (access && refresh && expiresAt) {
+    return { access, refresh, expiresAt: Number(expiresAt) };
   }
 };
 
@@ -65,6 +69,12 @@ const setTokens = (tokens: Tokens) => {
     secure: false,
     sameSite: "lax",
   });
+  setCookie("token_expires_at", `${Date.now() + tokens.expiresIn * 1000}`, {
+    path: "/",
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+  });
 };
 
 const clearTokens = () => {
@@ -75,11 +85,13 @@ const clearTokens = () => {
 interface AuthenticatedContext {
   subject: Subject;
   token: string;
+  expiresAt: number;
 }
 
 interface UnauthenticatedContext {
   subject: null;
   token: null;
+  expiresAt: null;
 }
 
 type AuthContext = AuthenticatedContext | UnauthenticatedContext;
@@ -91,7 +103,7 @@ export const authMiddleware = createMiddleware().server(async ({ next }) => {
     if (res.err) {
       clearTokens();
       return next<AuthContext>({
-        context: { subject: null, token: null },
+        context: { subject: null, token: null, expiresAt: null },
       });
     }
     if (res.tokens) {
@@ -101,11 +113,14 @@ export const authMiddleware = createMiddleware().server(async ({ next }) => {
       context: {
         subject: res.subject,
         token: res.tokens?.access ?? tokens.access,
+        expiresAt: res.tokens?.expiresIn
+          ? Date.now() + res.tokens.expiresIn * 1000
+          : tokens.expiresAt,
       },
     });
   }
   return next<AuthContext>({
-    context: { subject: null, token: null },
+    context: { subject: null, token: null, expiresAt: null },
   });
 });
 
@@ -114,6 +129,7 @@ export const authState = createServerFn()
   .handler(({ context }) => ({
     subject: context.subject,
     token: context.token,
+    expiresAt: context.expiresAt,
   }));
 
 export const listTeams = createServerFn()

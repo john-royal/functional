@@ -1,8 +1,17 @@
 import { authState } from "./auth";
 
-declare global {
-  var token: string;
-}
+let tokenCache:
+  | Promise<
+      | {
+          token: string;
+          expiresAt: number;
+        }
+      | {
+          token: null;
+          expiresAt: null;
+        }
+    >
+  | undefined;
 
 export const apiFetch = async (path: string, options?: RequestInit) => {
   if (typeof window === "undefined") {
@@ -17,9 +26,30 @@ export const apiFetch = async (path: string, options?: RequestInit) => {
       },
     });
   }
-  const url = new URL(path, import.meta.env.VITE_API_URL);
-  return fetch(url, {
+  return fetch(new URL(path, import.meta.env.VITE_API_URL), {
     ...options,
-    headers: { Authorization: `Bearer ${window.token}`, ...options?.headers },
+    headers: {
+      Authorization: `Bearer ${await getToken()}`,
+      ...options?.headers,
+    },
   });
+};
+
+const getToken = async () => {
+  if (tokenCache) {
+    const cached = await tokenCache;
+    if (!cached.token) {
+      return null;
+    }
+    if (cached.expiresAt > Date.now()) {
+      return cached.token;
+    }
+  }
+  tokenCache = authState().then((res) => {
+    if (res.token && res.expiresAt) {
+      return { token: res.token, expiresAt: res.expiresAt };
+    }
+    return { token: null, expiresAt: null };
+  });
+  return tokenCache.then((res) => res?.token);
 };

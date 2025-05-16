@@ -12,10 +12,7 @@ export interface AuthClientInput extends ClientInput {
   redirectURI?: string;
 }
 
-export interface Tokens {
-  access: string;
-  refresh: string;
-}
+export type { Tokens } from "@openauthjs/openauth/client";
 
 export type { Challenge };
 
