@@ -14,9 +14,9 @@ const app = await alchemy("functional", {
 });
 
 const db = await app.run(async (scope) => {
-  const db = await NeonProject("neon-project", {
+  const db = await NeonProject("neon", {
     name: "functional-db",
-    region_id: "aws-us-east-1",
+    region_id: "aws-us-east-2",
     pg_version: 17,
   });
   const hyperdrive = await Hyperdrive("neon-hyperdrive", {
@@ -28,11 +28,16 @@ const db = await app.run(async (scope) => {
       user: db.connection_uris[0].connection_parameters.user,
       password: db.connection_uris[0].connection_parameters.password,
     },
+    caching: {
+      disabled: true,
+    },
   });
-  await Bun.write(
-    ".env.local",
-    `DATABASE_URL=${db.connection_uris[0].connection_uri.unencrypted}`
-  );
+  const pooledConnectionString =
+    db.connection_uris[0].connection_uri.unencrypted.replace(
+      db.endpoints[0].id,
+      `${db.endpoints[0].id}-pooler`
+    );
+  await Bun.write(".env.local", `DATABASE_URL=${pooledConnectionString}`);
   await Exec("neon-db-push", {
     command: "bun run push",
     cwd: "./packages/db",
