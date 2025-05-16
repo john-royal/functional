@@ -1,5 +1,9 @@
 import { and, eq, schema } from "@functional/db";
-import { createDatabaseClient, type Database } from "@functional/db/client";
+import {
+  createDatabaseClient,
+  type Database,
+  type DatabaseTransaction,
+} from "@functional/db/client";
 import { createId } from "@paralleldrive/cuid2";
 
 export class DatabaseClient {
@@ -9,8 +13,18 @@ export class DatabaseClient {
     this.db = createDatabaseClient(connectionString);
   }
 
-  async findUser(githubId: number) {
-    const [user] = await this.db
+  async findOrCreateUser(profile: GitHub.Profile) {
+    return await this.db.transaction(async (tx) => {
+      const user = await this.findUser(tx, profile.id);
+      if (user) {
+        return user;
+      }
+      return await this.createUser(tx, profile);
+    });
+  }
+
+  async findUser(tx: DatabaseTransaction, githubId: number) {
+    const [user] = await tx
       .select({
         id: schema.users.id,
         defaultTeamId: schema.users.defaultTeamId,
@@ -38,55 +52,55 @@ export class DatabaseClient {
     };
   }
 
-  async createUser(profile: {
+  async createUser(tx: DatabaseTransaction, profile: GitHub.Profile) {
+    const userId = createId();
+    const teamId = createId();
+    await tx.insert(schema.teams).values({
+      id: teamId,
+      name: profile.name,
+      slug: profile.login,
+      type: "personal",
+    });
+    await tx.insert(schema.users).values({
+      id: userId,
+      name: profile.name,
+      image: profile.avatar_url,
+      slug: profile.login,
+      defaultTeamId: teamId,
+    });
+    await Promise.all([
+      tx.insert(schema.accounts).values({
+        id: createId(),
+        userId,
+        provider: "github",
+        providerAccountId: profile.id.toString(),
+      }),
+      tx.insert(schema.teamMembers).values({
+        userId,
+        teamId,
+        role: "owner",
+      }),
+    ]);
+    return {
+      id: userId,
+      defaultTeam: {
+        id: teamId,
+        slug: profile.login,
+      },
+    };
+  }
+}
+
+export namespace GitHub {
+  export interface Profile {
     id: number;
     name: string;
     login: string;
     email: string;
     avatar_url: string;
-  }) {
-    return await this.db.transaction(async (tx) => {
-      const userId = createId();
-      const teamId = createId();
-      await tx.insert(schema.teams).values({
-        id: teamId,
-        name: profile.name,
-        slug: profile.login,
-        type: "personal",
-      });
-      await tx.insert(schema.users).values({
-        id: userId,
-        name: profile.name,
-        image: profile.avatar_url,
-        slug: profile.login,
-        defaultTeamId: teamId,
-      });
-      await Promise.all([
-        tx.insert(schema.accounts).values({
-          id: createId(),
-          userId,
-          provider: "github",
-          providerAccountId: profile.id.toString(),
-        }),
-        tx.insert(schema.teamMembers).values({
-          userId,
-          teamId,
-          role: "owner",
-        }),
-      ]);
-      return {
-        id: userId,
-        defaultTeam: {
-          id: teamId,
-          slug: profile.login,
-        },
-      };
-    });
   }
-}
 
-export namespace GitHub {
-  export const fetchUser = async (accessToken: string) => {
+  export const fetchProfile = async (accessToken: string) => {
     const res = await fetch("https://api.github.com/user", {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -96,16 +110,14 @@ export namespace GitHub {
     if (!res.ok) {
       throw new Error(`Failed to fetch user info: ${res.statusText}`);
     }
-    return res.json() as Promise<{
-      id: number;
-      name: string;
-      login: string;
-      email?: string;
-      avatar_url: string;
-    }>;
+    const user = await res.json<Profile>();
+    if (!user.email) {
+      user.email = await fetchEmail(accessToken);
+    }
+    return user;
   };
 
-  export const fetchEmail = async (accessToken: string) => {
+  const fetchEmail = async (accessToken: string) => {
     const res = await fetch("https://api.github.com/user/emails", {
       headers: {
         Authorization: `Bearer ${accessToken}`,

@@ -32,28 +32,11 @@ export default {
         }),
       },
       success: async (ctx, input) => {
-        console.log("input", JSON.stringify(input, null, 2));
-        const userInfo = await GitHub.fetchUser(input.tokenset.access);
-        console.log("userInfo", JSON.stringify(userInfo, null, 2));
-        const existingUser = await db.findUser(userInfo.id);
-        if (existingUser) {
-          console.log("existingUser", JSON.stringify(existingUser, null, 2));
-          return ctx.subject("user", existingUser);
-        }
-        if (!userInfo.email) {
-          console.log("fetching email");
-          userInfo.email = await GitHub.fetchEmail(input.tokenset.access);
-          console.log("email", JSON.stringify(userInfo.email, null, 2));
-        }
-        console.log("creating user");
-        const newUser = await db.createUser(
-          userInfo as typeof userInfo & { email: string }
-        );
-        console.log("newUser", JSON.stringify(newUser, null, 2));
-        return ctx.subject("user", newUser);
+        const profile = await GitHub.fetchProfile(input.tokenset.access);
+        const user = await db.findOrCreateUser(profile);
+        return ctx.subject("user", user);
       },
     });
     return await app.fetch(request, env, ctx);
   },
 };
-// test
