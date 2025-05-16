@@ -57,8 +57,9 @@ export class MiniflareController {
       throw new Error("Worker updated, but Miniflare not initialized");
     }
     this.workerOptions.set(name, workerOptions);
-    this.workers.delete(name);
     await this.miniflare.setOptions(this.createMiniflareOptions());
+    this.workers.delete(name);
+    console.log(`[${name}] updated`);
   }
 
   createProxyServer(name: string, port: number) {

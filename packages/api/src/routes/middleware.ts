@@ -20,6 +20,9 @@ export const authMiddleware = createMiddleware<HonoEnv>(async (c, next) => {
     throw new APIError({
       code: "UNAUTHORIZED",
       message: "Missing or invalid bearer token",
+      details: {
+        url: c.req.url,
+      },
     });
   }
   const res = await auth.verify({ access: token });

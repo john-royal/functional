@@ -19,12 +19,12 @@ export class BuildController {
   constructor(readonly options: BuildControllerOptions) {}
 
   async init(): Promise<WorkerOptions> {
-    console.log(`[${this.options.name}] build`);
-
     return await this.build();
   }
 
   async build() {
+    console.log(`[${this.options.name}] build`);
+
     const result = await esbuild.build({
       entryPoints: [join(this.options.cwd, this.options.entrypoint)],
       outdir: join(this.options.cwd, ".dev", this.options.name),
@@ -48,7 +48,6 @@ export class BuildController {
   }
 
   async rebuild() {
-    console.log(`[${this.options.name}] rebuild`);
     const result = await this.build();
     this.options.onUpdate(result);
   }

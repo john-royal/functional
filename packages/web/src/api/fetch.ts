@@ -3,10 +3,12 @@ import createClient from "openapi-react-query";
 import type { paths } from "./openapi.gen";
 import { authState } from "@/lib/auth";
 
-export const $fetch = createFetchClient<paths>({
+export const apiFetch = createFetchClient<paths>({
   baseUrl: import.meta.env.VITE_API_URL,
   fetch: async (input) => {
-    const token = await getToken();
+    const token = await (typeof window === "undefined"
+      ? authState().then((res) => res.token)
+      : getClientToken());
     const request = new Request(input, {
       method: input.method,
       body: input.body,
@@ -20,7 +22,7 @@ export const $fetch = createFetchClient<paths>({
   },
 });
 
-export const $api = createClient($fetch);
+export const $api = createClient(apiFetch);
 
 let tokenCache:
   | Promise<
@@ -35,7 +37,7 @@ let tokenCache:
     >
   | undefined;
 
-const getToken = async () => {
+const getClientToken = async () => {
   if (tokenCache) {
     const cached = await tokenCache;
     if (!cached.token) {

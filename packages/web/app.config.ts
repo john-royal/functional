@@ -26,9 +26,8 @@ const devBindingsPlugin: PluginOption = {
           },
         },
         API: {
-          fetch: (url, init) => {
-            const rewrite = new URL(url, "${process.env.VITE_API_URL}");
-            return fetch(rewrite, init);
+          fetch: (req) => {
+            return fetch(req);
           },
         },
       };`;
