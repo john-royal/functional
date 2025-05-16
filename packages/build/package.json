@@ -14,8 +14,6 @@
   },
   "packageManager": "bun@1.2.13",
   "dependencies": {
-    "@functional/db": "workspace:*",
-    "@t3-oss/env-core": "^0.13.4",
     "zod": "^3.24.4"
   }
 }
