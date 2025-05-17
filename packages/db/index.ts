@@ -16,6 +16,15 @@ type Model = {
     : never;
 };
 
+type EnumValues = {
+  [T in keyof Schema]: Schema[T] extends {
+    enumValues: (infer E)[];
+  }
+    ? E
+    : never;
+};
+
+export type Enum<T extends keyof EnumValues> = EnumValues[T];
 export type SelectModel<T extends keyof Model> = Model[T]["select"];
 export type InsertModel<T extends keyof Model> = Model[T]["insert"];
 

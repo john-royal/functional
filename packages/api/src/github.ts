@@ -1,20 +1,21 @@
 import { Webhooks } from "@octokit/webhooks";
 
-interface InstallationDeletedEvent {
+export interface InstallationDeletedEvent {
   type: "installation.deleted";
-  data: {
+  payload: {
     installationId: number;
   };
 }
 
-interface PushEvent {
+export interface PushEvent {
   type: "push";
-  data: {
+  payload: {
     installationId: number;
     repositoryId: number;
     ref: string;
     sha: string;
     message: string;
+    timestamp: number;
   };
 }
 
@@ -31,7 +32,7 @@ const createWebhookHandler = (env: Env) => {
   webhooks.on("installation.deleted", async (event) => {
     await env.GITHUB_QUEUE.send({
       type: "installation.deleted",
-      data: {
+      payload: {
         installationId: event.payload.installation.id,
       },
     });
@@ -40,12 +41,13 @@ const createWebhookHandler = (env: Env) => {
   webhooks.on("push", async (event) => {
     await env.GITHUB_QUEUE.send({
       type: "push",
-      data: {
+      payload: {
         installationId: event.payload.installation!.id,
         repositoryId: event.payload.repository.id,
         ref: event.payload.ref,
         sha: event.payload.after,
         message: event.payload.head_commit!.message,
+        timestamp: new Date(event.payload.head_commit!.timestamp).getTime(),
       },
     });
   });

@@ -7,7 +7,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { cuid, timestamps } from "./columns";
-import { gitRepositories } from "./git";
+import { githubInstallations } from "./github";
 import { teams } from "./teams";
 
 export const projects = pgTable("projects", {
@@ -17,9 +17,12 @@ export const projects = pgTable("projects", {
   teamId: cuid()
     .notNull()
     .references(() => teams.id),
-  gitRepositoryId: bigint({ mode: "number" })
+  githubRepositoryId: bigint({ mode: "number" }).notNull(),
+  githubInstallationId: bigint({ mode: "number" })
     .notNull()
-    .references(() => gitRepositories.id),
+    .references(() => githubInstallations.id),
+  githubRepositoryName: varchar({ length: 255 }).notNull(),
+  githubRepositoryUrl: varchar({ length: 255 }).notNull(),
   ...timestamps(),
 });
 

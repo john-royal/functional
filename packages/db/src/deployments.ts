@@ -1,4 +1,4 @@
-import { index, jsonb, pgEnum, pgTable } from "drizzle-orm/pg-core";
+import { index, jsonb, pgEnum, pgTable, timestamp } from "drizzle-orm/pg-core";
 import { cuid, timestamps } from "./columns";
 import { projects } from "./projects";
 
@@ -33,7 +33,11 @@ export const deployments = pgTable(
     output: jsonb().$type<{
       workerName: string;
     }>(),
+    triggeredAt: timestamp().notNull(),
     ...timestamps(),
   },
-  (t) => [index().on(t.projectId, t.createdAt.desc(), t.status)]
+  (t) => [
+    index().on(t.projectId, t.createdAt.desc(), t.status),
+    index().on(t.projectId, t.triggeredAt.asc(), t.status),
+  ]
 );

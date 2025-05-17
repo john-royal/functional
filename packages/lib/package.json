@@ -1,0 +1,19 @@
+{
+  "name": "@functional/lib",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "exports": {
+    "./subjects": "./src/subjects.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "@openauthjs/openauth": "^0.4.3",
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "zod": "^3.24.4"
+  }
+}

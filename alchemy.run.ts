@@ -1,7 +1,9 @@
 import alchemy from "alchemy";
 import {
+  DurableObjectNamespace,
   Hyperdrive,
   KVNamespace,
+  Queue,
   TanStackStart,
   Worker,
 } from "alchemy/cloudflare";
@@ -85,15 +87,42 @@ const api = await Worker("api", {
   url: true,
 });
 
+const githubQueue = await Queue("github-queue", {
+  name: `functional-github-queue-${app.stage}`,
+});
+
+const github = await Worker("github", {
+  name: "github",
+  entrypoint: "./packages/api/src/github.ts",
+  bindings: {
+    GITHUB_WEBHOOK_SECRET: alchemy.secret(process.env.GITHUB_WEBHOOK_SECRET),
+    GITHUB_QUEUE: githubQueue,
+  },
+  observability: { enabled: true },
+  compatibilityFlags: ["nodejs_compat"],
+  url: true,
+});
+
+const teamDeploymentCoordinator = new DurableObjectNamespace(
+  "team-deployment-coordinator",
+  {
+    className: "TeamDeploymentCoordinator",
+    sqlite: true,
+  }
+);
+
 const internal = await Worker("internal", {
   name: "internal",
   entrypoint: "./packages/api/src/private/index.ts",
   bindings: {
     GITHUB_WEBHOOK_SECRET: alchemy.secret(process.env.GITHUB_WEBHOOK_SECRET),
+    HYPERDRIVE: db.hyperdrive,
+    TEAM_DEPLOYMENT_COORDINATOR: teamDeploymentCoordinator,
   },
   observability: { enabled: true },
   compatibilityFlags: ["nodejs_compat"],
   url: true,
+  eventSources: [githubQueue],
 });
 
 await TanStackStart("web", {

@@ -163,7 +163,7 @@ export const registerGitInstallationsRoutes = (app: OpenAPIHono<HonoEnv>) => {
   app.openapi(listGitRepositoriesRoute, async (c) => {
     const octokit = await getInstallationOctokit(c, c.req.valid("param").id);
     const repositories =
-      await octokit.rest.apps.listReposAccessibleToInstallation();
+      await octokit.rest.apps.listReposAccessibleToInstallation({});
     return c.json(
       repositories.data.repositories.map((r) => ({
         id: r.id,
