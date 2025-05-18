@@ -1,8 +1,9 @@
-import { eq, and, schema, type InsertModel } from "@functional/db";
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { and, eq, schema, type InsertModel } from "@functional/db";
+import { OpenAPIHono, z } from "@hono/zod-openapi";
 import type { HonoEnv } from "../lib/env";
-import { validateTeam, validateGitHubInstallation } from "../lib/helpers";
 import { APIError } from "../lib/error";
+import { validateGitHubInstallation, validateTeam } from "../lib/helpers";
+import { describeRoute } from "../lib/openapi";
 
 const githubInstallationParamSchema = z.object({
   team: z.string(),
@@ -32,7 +33,7 @@ const githubRepositorySchema = z
 const githubInstallationsRouter = new OpenAPIHono<HonoEnv>();
 
 githubInstallationsRouter.openapi(
-  createRoute({
+  describeRoute({
     method: "get",
     path: "/",
     request: {
@@ -63,7 +64,7 @@ githubInstallationsRouter.openapi(
 );
 
 githubInstallationsRouter.openapi(
-  createRoute({
+  describeRoute({
     method: "get",
     path: "/{installationId}",
     request: {
@@ -104,7 +105,7 @@ githubInstallationsRouter.openapi(
 );
 
 githubInstallationsRouter.openapi(
-  createRoute({
+  describeRoute({
     method: "put",
     path: "/{installationId}",
     request: {
@@ -159,7 +160,7 @@ githubInstallationsRouter.openapi(
 );
 
 githubInstallationsRouter.openapi(
-  createRoute({
+  describeRoute({
     method: "get",
     path: "/{installationId}/repositories",
     request: {

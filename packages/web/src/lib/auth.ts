@@ -1,9 +1,8 @@
 import {
-  AuthClient,
+  createClient,
   type Challenge,
-  type Subject,
   type Tokens,
-} from "@functional/auth/client";
+} from "@openauthjs/openauth/client";
 import { redirect } from "@tanstack/react-router";
 import { createMiddleware, createServerFn } from "@tanstack/react-start";
 import {
@@ -13,6 +12,7 @@ import {
 } from "@tanstack/react-start/server";
 import z from "zod";
 import { env } from "cloudflare:workers";
+import { subjects, type Subject } from "@functional/lib/subjects";
 
 declare module "cloudflare:workers" {
   namespace Cloudflare {
@@ -26,10 +26,11 @@ declare module "cloudflare:workers" {
   }
 }
 
-const authClient = new AuthClient({
+const redirectURI = `${env.FRONTEND_URL}/auth/callback`;
+
+const authClient = createClient({
   clientID: "api",
   issuer: env.AUTH_URL,
-  redirectURI: `${env.FRONTEND_URL}/auth/callback`,
   fetch: async (url, options) => {
     if (url.includes("/.well-known")) {
       return env.AUTH.fetch(url, {
@@ -100,7 +101,9 @@ type AuthContext = AuthenticatedContext | UnauthenticatedContext;
 export const authMiddleware = createMiddleware().server(async ({ next }) => {
   const tokens = getTokens();
   if (tokens) {
-    const res = await authClient.verify(tokens);
+    const res = await authClient.verify(subjects, tokens.access, {
+      refresh: tokens.refresh,
+    });
     if (res.err) {
       clearTokens();
       return next<AuthContext>({
@@ -157,7 +160,9 @@ export const authLogout = createServerFn().handler(async () => {
 });
 
 export const authRedirect = createServerFn().handler(async () => {
-  const res = await authClient.authorize();
+  const res = await authClient.authorize(redirectURI, "code", {
+    provider: "github",
+  });
   setCookie("auth_challenge", JSON.stringify(res.challenge), {
     path: "/",
     httpOnly: true,
@@ -195,7 +200,11 @@ export const authCallback = createServerFn()
     if (data.state !== challenge.state) {
       return { error: "invalid_state" };
     }
-    const res = await authClient.exchange(data.code, challenge.verifier);
+    const res = await authClient.exchange(
+      data.code,
+      redirectURI,
+      challenge.verifier
+    );
     if (res.err) {
       return { error: "exchange_error" };
     }

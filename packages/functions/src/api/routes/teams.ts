@@ -1,10 +1,11 @@
-import { and, eq, getTableColumns, ne, or, schema } from "@functional/db";
-import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { and, eq, getTableColumns, or, schema } from "@functional/db";
+import { isUniqueViolation } from "@functional/db/utils";
+import { OpenAPIHono, z } from "@hono/zod-openapi";
+import { createId } from "@paralleldrive/cuid2";
 import type { HonoEnv } from "../lib/env";
 import { APIError } from "../lib/error";
-import { createId } from "@paralleldrive/cuid2";
-import { isUniqueViolation } from "@functional/db/utils";
 import { validateTeam } from "../lib/helpers";
+import { describeRoute } from "../lib/openapi";
 
 const teamParams = z.object({
   team: z.string(),
@@ -24,7 +25,7 @@ const teamSchema = z
 const teamsRouter = new OpenAPIHono<HonoEnv>();
 
 teamsRouter.openapi(
-  createRoute({
+  describeRoute({
     method: "get",
     path: "/",
     responses: {
@@ -48,7 +49,7 @@ teamsRouter.openapi(
 );
 
 teamsRouter.openapi(
-  createRoute({
+  describeRoute({
     method: "post",
     path: "/",
     request: {
@@ -106,7 +107,7 @@ teamsRouter.openapi(
 );
 
 teamsRouter.openapi(
-  createRoute({
+  describeRoute({
     method: "get",
     path: "/{team}",
     request: {
@@ -146,7 +147,7 @@ teamsRouter.openapi(
 );
 
 teamsRouter.openapi(
-  createRoute({
+  describeRoute({
     method: "delete",
     path: "/{team}",
     request: {

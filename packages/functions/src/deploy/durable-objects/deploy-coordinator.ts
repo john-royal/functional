@@ -108,6 +108,11 @@ export class DeployCoordinator extends DurableObject<Env> {
     await this.dequeue();
   }
 
+  async deploying(teamId: string, deploymentId: string) {
+    await this.init(teamId);
+    await this.patch(deploymentId, { status: "deploying" });
+  }
+
   private async patch(id: string, data: Partial<SelectModel<"deployments">>) {
     console.log(`[DeployCoordinator] patch ${id}`, data);
     await this.db

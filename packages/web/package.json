@@ -11,10 +11,11 @@
     "format": "biome format",
     "lint": "biome lint",
     "check": "biome check",
-    "generate-openapi": "openapi-typescript https://api.johnroyal.workers.dev/openapi.json -o src/api/openapi.gen.ts && biome check --fix src/api/openapi.gen.ts"
+    "generate-openapi": "openapi-typescript http://localhost:3001/openapi.json -o src/api/openapi.gen.ts && biome check --fix src/api/openapi.gen.ts"
   },
   "dependencies": {
-    "@functional/auth": "workspace:*",
+    "@functional/lib": "workspace:*",
+    "@openauthjs/openauth": "^0.4.3",
     "@tailwindcss/vite": "^4.0.6",
     "@tanstack/react-query": "^5.76.1",
     "@tanstack/react-router": "^1.114.3",

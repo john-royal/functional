@@ -29,6 +29,15 @@ export interface paths {
             "application/json": components["schemas"]["Team"][];
           };
         };
+        /** @description An error response */
+        default: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorResponsePayload"];
+          };
+        };
       };
     };
     put?: never;
@@ -59,6 +68,15 @@ export interface paths {
             "application/json": {
               id: string;
             };
+          };
+        };
+        /** @description An error response */
+        default: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorResponsePayload"];
           };
         };
       };
@@ -96,6 +114,15 @@ export interface paths {
             "application/json": components["schemas"]["Team"];
           };
         };
+        /** @description An error response */
+        default: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorResponsePayload"];
+          };
+        };
       };
     };
     put?: never;
@@ -120,6 +147,15 @@ export interface paths {
             "application/json": {
               id: string;
             };
+          };
+        };
+        /** @description An error response */
+        default: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorResponsePayload"];
           };
         };
       };
@@ -154,6 +190,15 @@ export interface paths {
           };
           content: {
             "application/json": components["schemas"]["Project"][];
+          };
+        };
+        /** @description An error response */
+        default: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorResponsePayload"];
           };
         };
       };
@@ -192,6 +237,15 @@ export interface paths {
             };
           };
         };
+        /** @description An error response */
+        default: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorResponsePayload"];
+          };
+        };
       };
     };
     delete?: never;
@@ -228,6 +282,15 @@ export interface paths {
             "application/json": components["schemas"]["Project"];
           };
         };
+        /** @description An error response */
+        default: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorResponsePayload"];
+          };
+        };
       };
     };
     put?: never;
@@ -253,6 +316,15 @@ export interface paths {
             "application/json": {
               id: string;
             };
+          };
+        };
+        /** @description An error response */
+        default: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorResponsePayload"];
           };
         };
       };
@@ -287,6 +359,15 @@ export interface paths {
           };
           content: {
             "application/json": components["schemas"]["GitHubInstallation"][];
+          };
+        };
+        /** @description An error response */
+        default: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorResponsePayload"];
           };
         };
       };
@@ -327,6 +408,15 @@ export interface paths {
             "application/json": components["schemas"]["GitHubInstallation"];
           };
         };
+        /** @description An error response */
+        default: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorResponsePayload"];
+          };
+        };
       };
     };
     put: {
@@ -350,6 +440,15 @@ export interface paths {
             "application/json": {
               id: number;
             };
+          };
+        };
+        /** @description An error response */
+        default: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorResponsePayload"];
           };
         };
       };
@@ -387,6 +486,15 @@ export interface paths {
           };
           content: {
             "application/json": components["schemas"]["GitHubRepository"][];
+          };
+        };
+        /** @description An error response */
+        default: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorResponsePayload"];
           };
         };
       };
@@ -427,6 +535,15 @@ export interface paths {
             "application/json": unknown[];
           };
         };
+        /** @description An error response */
+        default: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ErrorResponsePayload"];
+          };
+        };
       };
     };
     put?: never;
@@ -451,6 +568,13 @@ export interface components {
       createdAt: string;
       /** Format: date-time */
       updatedAt: string;
+    };
+    ErrorResponsePayload: {
+      message: string;
+      code: string;
+      details?: {
+        [key: string]: unknown;
+      };
     };
     Project: {
       id: string;

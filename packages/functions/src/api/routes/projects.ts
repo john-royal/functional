@@ -1,6 +1,6 @@
 import { and, eq, or, schema } from "@functional/db";
 import { isUniqueViolation } from "@functional/db/utils";
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { OpenAPIHono, z } from "@hono/zod-openapi";
 import { createId } from "@paralleldrive/cuid2";
 import type { HonoEnv } from "../lib/env";
 import { APIError } from "../lib/error";
@@ -9,6 +9,7 @@ import {
   validateProject,
   validateTeam,
 } from "../lib/helpers";
+import { describeRoute } from "../lib/openapi";
 
 const projectParams = z.object({
   team: z.string(),
@@ -33,7 +34,7 @@ export const projectSchema = z
 const projectsRouter = new OpenAPIHono<HonoEnv>();
 
 projectsRouter.openapi(
-  createRoute({
+  describeRoute({
     method: "get",
     path: "/",
     request: {
@@ -52,13 +53,19 @@ projectsRouter.openapi(
       },
     },
   }),
-  (c) => {
-    return c.json([]);
+  async (c) => {
+    const db = c.get("db");
+    const team = await validateTeam(c);
+    const projects = await db
+      .select()
+      .from(schema.projects)
+      .where(eq(schema.projects.teamId, team.id));
+    return c.json(projects);
   }
 );
 
 projectsRouter.openapi(
-  createRoute({
+  describeRoute({
     method: "post",
     path: "/",
     request: {
@@ -118,21 +125,6 @@ projectsRouter.openapi(
           throw error;
         });
     });
-    // const coordinatorId = c.env.DEPLOY_COORDINATOR.idFromName(team.id);
-    // const coordinator = c.env.DEPLOY_COORDINATOR.get(coordinatorId);
-    // await coordinator.enqueue(team.id, [
-    //   {
-    //     projectId: projectId,
-    //     status: "queued",
-    //     trigger: "manual",
-    //     commit: {
-    //       ref: "main",
-    //       message: "",
-    //       sha: "",
-    //     },
-    //     triggeredAt: new Date(),
-    //   },
-    // ]);
     await c.env.GITHUB_QUEUE.send({
       type: "push",
       payload: {
@@ -149,7 +141,7 @@ projectsRouter.openapi(
 );
 
 projectsRouter.openapi(
-  createRoute({
+  describeRoute({
     method: "get",
     path: "/{project}",
     request: {
@@ -191,7 +183,7 @@ projectsRouter.openapi(
 );
 
 projectsRouter.openapi(
-  createRoute({
+  describeRoute({
     method: "delete",
     path: "/{project}",
     request: {

@@ -1,7 +1,7 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "dispatch",
-  "main": "./src/index.ts",
+  "main": "./src/dispatch/index.ts",
   "compatibility_date": "2025-04-20",
   "compatibility_flags": ["nodejs_compat"],
   "dispatch_namespaces": [
@@ -10,14 +10,12 @@
       "namespace": "functional-staging",
     },
   ],
-  "hyperdrive": [
-    { "binding": "HYPERDRIVE", "id": "e63590d935984131bf2fff46c25c0004" },
-  ],
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "" }],
   "observability": { "enabled": true },
   "routes": [
     {
       "pattern": "*functional.dev/*",
-      "zone_id": "426d9373f2eb70fa5b09295efb69a441",
+      "zone_id": "",
     },
   ],
 }

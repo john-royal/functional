@@ -1,12 +1,13 @@
-import { schema, eq } from "@functional/db";
-import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { eq, schema, desc } from "@functional/db";
+import { OpenAPIHono, z } from "@hono/zod-openapi";
 import type { HonoEnv } from "../lib/env";
 import { validateProject } from "../lib/helpers";
+import { describeRoute } from "../lib/openapi";
 
 const deploymentsRouter = new OpenAPIHono<HonoEnv>();
 
 deploymentsRouter.openapi(
-  createRoute({
+  describeRoute({
     method: "get",
     path: "/",
     request: {
@@ -32,7 +33,8 @@ deploymentsRouter.openapi(
       .get("db")
       .select()
       .from(schema.deployments)
-      .where(eq(schema.deployments.projectId, project.id));
+      .where(eq(schema.deployments.projectId, project.id))
+      .orderBy(desc(schema.deployments.createdAt));
     return c.json(deployments);
   }
 );

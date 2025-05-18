@@ -39,6 +39,14 @@ export default {
           const workflow = await env.DEPLOYMENT_WORKFLOW.get(
             token.properties.deploymentId
           );
+          const coordinatorId = env.DEPLOYMENT_COORDINATOR.idFromName(
+            token.properties.teamId
+          );
+          const coordinator = env.DEPLOYMENT_COORDINATOR.get(coordinatorId);
+          await coordinator.deploying(
+            token.properties.teamId,
+            token.properties.deploymentId
+          );
           await workflow.sendEvent({
             type: "complete-deployment",
             payload: c.req.valid("json"),

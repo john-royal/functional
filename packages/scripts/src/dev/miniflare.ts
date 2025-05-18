@@ -60,7 +60,7 @@ export class MiniflareController {
     }
     this.workerOptions.set(name, workerOptions);
     await this.miniflare.setOptions(this.createMiniflareOptions());
-    this.workers.delete(name);
+    this.workers.clear();
     console.log(`[${name}] updated`);
   }
 
