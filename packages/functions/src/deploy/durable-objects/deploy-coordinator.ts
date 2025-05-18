@@ -17,44 +17,46 @@ const MAX_CONCURRENT_BUILDS = 1;
 
 export class DeployCoordinator extends DurableObject<Env> {
   private db: Database;
-  private teamId: string;
+  private teamId?: string;
   private deployments: SelectModel<"deployments">[] = [];
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
 
-    assert(
-      ctx.id.name,
-      "Cannot initialize DeployCoordinator without a team ID"
-    );
-    this.teamId = ctx.id.name;
     this.db = createDatabaseClient(env.HYPERDRIVE.connectionString);
-
-    ctx.blockConcurrencyWhile(async () => {
-      this.deployments = await this.db
-        .select(getTableColumns(schema.deployments))
-        .from(schema.projects)
-        .where(eq(schema.projects.teamId, this.teamId))
-        .innerJoin(
-          schema.deployments,
-          and(
-            eq(schema.deployments.projectId, schema.projects.id),
-            notInArray(schema.deployments.status, [
-              "success",
-              "failed",
-              "canceled",
-            ])
-          )
-        )
-        .orderBy(asc(schema.deployments.triggeredAt));
-    });
   }
 
   get concurrentBuilds() {
     return this.deployments.filter((d) => d.status === "building").length;
   }
 
-  async enqueue(inputs: InsertModel<"deployments">[]) {
+  async init(teamId: string) {
+    console.log(`[DeployCoordinator] init ${teamId}`);
+    this.teamId = teamId;
+    this.deployments = await this.db
+      .select(getTableColumns(schema.deployments))
+      .from(schema.projects)
+      .where(eq(schema.projects.teamId, this.teamId))
+      .innerJoin(
+        schema.deployments,
+        and(
+          eq(schema.deployments.projectId, schema.projects.id),
+          notInArray(schema.deployments.status, [
+            "success",
+            "failed",
+            "canceled",
+          ])
+        )
+      )
+      .orderBy(asc(schema.deployments.triggeredAt));
+  }
+
+  async enqueue(teamId: string, inputs: InsertModel<"deployments">[]) {
+    await this.init(teamId);
+    console.log(
+      `[DeployCoordinator] enqueue`,
+      inputs.map((i) => i.id)
+    );
     const newDeployments = await this.db
       .insert(schema.deployments)
       .values(inputs)
@@ -75,30 +77,39 @@ export class DeployCoordinator extends DurableObject<Env> {
       return;
     }
     await this.patch(next.id, { status: "building" });
-    const runnerId = this.env.DEPLOYMENT_RUNNER.idFromName(next.id);
-    const runner = this.env.DEPLOYMENT_RUNNER.get(runnerId);
-    await runner.start(next);
+    await this.env.DEPLOYMENT_WORKFLOW.create({
+      id: next.id,
+      params: {
+        projectId: next.projectId,
+        deploymentId: next.id,
+      },
+    });
   }
 
   async succeed(
-    id: string,
+    teamId: string,
+    deploymentId: string,
     output: NonNullable<SelectModel<"deployments">["output"]>
   ) {
-    await this.patch(id, { status: "success", output });
+    await this.init(teamId);
+    await this.patch(deploymentId, { status: "success", output });
     await this.dequeue();
   }
 
-  async fail(id: string) {
-    await this.patch(id, { status: "failed" });
+  async fail(teamId: string, deploymentId: string) {
+    await this.init(teamId);
+    await this.patch(deploymentId, { status: "failed" });
     await this.dequeue();
   }
 
-  async cancel(id: string) {
-    await this.patch(id, { status: "canceled" });
+  async cancel(teamId: string, deploymentId: string) {
+    await this.init(teamId);
+    await this.patch(deploymentId, { status: "canceled" });
     await this.dequeue();
   }
 
   private async patch(id: string, data: Partial<SelectModel<"deployments">>) {
+    console.log(`[DeployCoordinator] patch ${id}`, data);
     await this.db
       .update(schema.deployments)
       .set(data)

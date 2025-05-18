@@ -4,9 +4,11 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "bun build src/index.ts --target=bun --outfile=dist/index.js"
+    "build": "bun build src/index.ts --target=bun --outfile=dist/index.js",
+    "task": "bun run dist/index.js"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250517.0",
     "@types/bun": "latest"
   },
   "peerDependencies": {
@@ -14,6 +16,7 @@
   },
   "packageManager": "bun@1.2.13",
   "dependencies": {
+    "@functional/lib": "workspace:*",
     "zod": "^3.24.4"
   }
 }

@@ -57,9 +57,11 @@
     "packages/build": {
       "name": "build",
       "dependencies": {
+        "@functional/lib": "workspace:*",
         "zod": "^3.24.4",
       },
       "devDependencies": {
+        "@cloudflare/workers-types": "^4.20250517.0",
         "@types/bun": "latest",
       },
       "peerDependencies": {
@@ -98,6 +100,7 @@
         "@functional/db": "workspace:*",
         "@functional/lib": "workspace:*",
         "@hono/zod-openapi": "^0.19.6",
+        "@hono/zod-validator": "^0.5.0",
         "@octokit/webhooks": "^13.9.0",
         "@openauthjs/openauth": "^0.4.3",
         "@paralleldrive/cuid2": "^2.2.2",
@@ -2466,6 +2469,8 @@
     "bl/readable-stream": ["readable-stream@3.6.2", "", { "dependencies": { "inherits": "^2.0.3", "string_decoder": "^1.1.1", "util-deprecate": "^1.0.1" } }, "sha512-9u/sniCrY3D5WdsERHzHE4G2YCXqoG5FTHUiCC4SIbr6XcLZBY05ya9EKjYek9O5xOAwjGq+1JdGBAS7Q9ScoA=="],
 
     "boxen/chalk": ["chalk@5.4.1", "", {}, "sha512-zgVZuo2WcZgfUEmsn6eO3kINexW8RAE4maiQ8QNs8CtpPCSyMiYsULR3HQYkm3w8FIA3SberyMJMSldGsW+U3w=="],
+
+    "build/@cloudflare/workers-types": ["@cloudflare/workers-types@4.20250517.0", "", {}, "sha512-DYttpORVcvKGXI+zQDHBO6r0pDsAc8fkmJg0x1PK7+t0ijfc6nMVnUF/IVJIllScOWWHHCBknCbCmV0eGq2njA=="],
 
     "c12/chokidar": ["chokidar@4.0.3", "", { "dependencies": { "readdirp": "^4.0.1" } }, "sha512-Qgzu8kfBvo+cA4962jnP1KkS6Dop5NS6g7R5LFYJr4b8Ub94PPQXUksCw9PvXoeXPRRddRNC5C1JQUR2SMGtnA=="],
 

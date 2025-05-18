@@ -1,4 +1,6 @@
 import {
+  Log,
+  LogLevel,
   Miniflare,
   type MiniflareOptions,
   type WorkerOptions,
@@ -89,6 +91,7 @@ export class MiniflareController {
 
   createMiniflareOptions(): MiniflareOptions {
     return {
+      log: new Log(LogLevel.VERBOSE),
       workers: Array.from(this.workerOptions.values()),
       cachePersist: join(this.options.cwd, ".dev", "mf", "cache"),
       durableObjectsPersist: join(this.options.cwd, ".dev", "mf", "do"),

@@ -15,6 +15,16 @@ export const Route = createFileRoute("/_app/$team/$project")({
         },
       })
     );
+    void context.queryClient.prefetchQuery(
+      $api.queryOptions("get", "/teams/{team}/projects/{project}/deployments", {
+        params: {
+          path: {
+            team: params.team,
+            project: params.project,
+          },
+        },
+      })
+    );
   },
   pendingComponent: () => <div>Loading project...</div>,
 });
@@ -31,5 +41,22 @@ function RouteComponent() {
       },
     })
   );
-  return <pre>{JSON.stringify(data, null, 2)}</pre>;
+  const dpl = $api.useQuery(
+    "get",
+    "/teams/{team}/projects/{project}/deployments",
+    {
+      params: {
+        path: {
+          team,
+          project,
+        },
+      },
+    }
+  );
+  return (
+    <div>
+      <pre>{JSON.stringify(data, null, 2)}</pre>
+      <pre>{JSON.stringify(dpl.data, null, 2)}</pre>
+    </div>
+  );
 }

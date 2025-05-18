@@ -16,15 +16,15 @@ const miniflare = new MiniflareController({
     {
       name: "api",
       port: 3001,
-      entrypoint: "packages/api/src/index.ts",
+      entrypoint: "packages/functions/src/api/index.ts",
       worker: {
         modules: true,
         compatibilityFlags: ["nodejs_compat"],
         compatibilityDate: "2025-05-01",
         cache: true,
         serviceBindings: {
-          PRIVATE_API: {
-            name: "private-api",
+          DEPLOY: {
+            name: "deploy",
           },
           AUTH: {
             external: {
@@ -33,33 +33,53 @@ const miniflare = new MiniflareController({
             },
           },
         },
-        durableObjects: {
-          BUILD_LIMITER: {
-            className: "BuildLimiter",
-            useSQLite: true,
-            scriptName: "private-api",
-          },
-        },
         bindings: {
           ...sharedBindings,
+          AUTH_ISSUER: "https://auth.johnroyal.workers.dev",
           FRONTEND_URL: "http://localhost:3000",
+        },
+        durableObjects: {
+          DEPLOY_COORDINATOR: {
+            className: "DeployCoordinator",
+            useSQLite: true,
+            scriptName: "deploy",
+          },
         },
       },
     },
     {
-      name: "private-api",
+      name: "deploy",
       port: 3002,
-      entrypoint: "packages/api/src/private/index.ts",
+      entrypoint: "packages/functions/src/deploy/index.ts",
       worker: {
         modules: true,
         compatibilityFlags: ["nodejs_compat"],
         compatibilityDate: "2025-05-01",
         cache: true,
-        bindings: sharedBindings,
+        bindings: {
+          ...sharedBindings,
+          API_URL: "http://localhost:3002",
+          CF_ACCOUNT_ID: process.env.CF_ACCOUNT_ID!,
+          CF_R2_PARENT_ACCESS_KEY_ID: process.env.CF_R2_PARENT_ACCESS_KEY_ID!,
+          CF_API_TOKEN: process.env.CF_API_TOKEN!,
+          CF_DISPATCH_NAMESPACE: process.env.CF_DISPATCH_NAMESPACE!,
+          DEPLOYMENT_ARTIFACT_BUCKET_NAME:
+            "functional-deploy-artifact-bucket-johnroyal",
+          DEPLOYMENT_JWT_SECRET: process.env.DEPLOYMENT_JWT_SECRET!,
+          FLY_API_TOKEN: process.env.FLY_API_TOKEN!,
+          FLY_APP_NAME: "functional",
+          FLY_CONTAINER_IMAGE: process.env.FLY_CONTAINER_IMAGE!,
+        },
         durableObjects: {
-          BUILD_LIMITER: {
-            className: "BuildLimiter",
+          DEPLOYMENT_COORDINATOR: {
+            className: "DeployCoordinator",
             useSQLite: true,
+          },
+        },
+        workflows: {
+          DEPLOYMENT_WORKFLOW: {
+            name: "deployment-workflow",
+            className: "DeploymentWorkflow",
           },
         },
       },

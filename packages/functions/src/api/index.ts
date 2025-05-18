@@ -7,9 +7,16 @@ import githubInstallationsRouter from "./routes/github-installations";
 import { GitHubClient } from "./lib/github";
 import type { HonoEnv } from "./lib/env";
 import { createDatabaseClient } from "@functional/db/client";
+import { cors } from "hono/cors";
+import deploymentsRouter from "./routes/deployments";
 
 const app = new OpenAPIHono<HonoEnv>();
 
+app.use(
+  cors({
+    origin: (_, c) => c.env.FRONTEND_URL,
+  })
+);
 app.use(async (c, next) => {
   const db = createDatabaseClient(c.env.HYPERDRIVE.connectionString);
   const github = new GitHubClient({
@@ -26,6 +33,7 @@ app.use("/teams/*", Auth.middleware());
 app.route("/teams", teamsRouter);
 app.route("/teams/:team/projects", projectsRouter);
 app.route("/teams/:team/github-installations", githubInstallationsRouter);
+app.route("/teams/:team/projects/:project/deployments", deploymentsRouter);
 
 app.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", {
   type: "http",
@@ -35,8 +43,8 @@ app.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", {
 app.doc("/openapi.json", {
   openapi: "3.0.0",
   info: {
-    title: "Team API",
-    version: "1.0.0",
+    title: "Functional API",
+    version: "0.0.1",
   },
   security: [{ bearerAuth: [] }],
 });

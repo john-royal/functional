@@ -11,7 +11,6 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** @description List all teams available to the current user */
     get: {
       parameters: {
         query?: never;
@@ -28,15 +27,6 @@ export interface paths {
           };
           content: {
             "application/json": components["schemas"]["Team"][];
-          };
-        };
-        /** @description An error response */
-        default: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["ErrorResponsePayload"];
           };
         };
       };
@@ -69,15 +59,6 @@ export interface paths {
             "application/json": {
               id: string;
             };
-          };
-        };
-        /** @description An error response */
-        default: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["ErrorResponsePayload"];
           };
         };
       };
@@ -115,15 +96,6 @@ export interface paths {
             "application/json": components["schemas"]["Team"];
           };
         };
-        /** @description An error response */
-        default: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["ErrorResponsePayload"];
-          };
-        };
       };
     };
     put?: never;
@@ -148,15 +120,6 @@ export interface paths {
             "application/json": {
               id: string;
             };
-          };
-        };
-        /** @description An error response */
-        default: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["ErrorResponsePayload"];
           };
         };
       };
@@ -193,15 +156,6 @@ export interface paths {
             "application/json": components["schemas"]["Project"][];
           };
         };
-        /** @description An error response */
-        default: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["ErrorResponsePayload"];
-          };
-        };
       };
     };
     put?: never;
@@ -219,7 +173,10 @@ export interface paths {
           "application/json": {
             name: string;
             slug: string;
-            gitRepository: components["schemas"]["GitRepository"];
+            githubRepositoryId: number;
+            githubInstallationId: number;
+            githubRepositoryName: string;
+            githubRepositoryUrl: string;
           };
         };
       };
@@ -233,15 +190,6 @@ export interface paths {
             "application/json": {
               id: string;
             };
-          };
-        };
-        /** @description An error response */
-        default: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["ErrorResponsePayload"];
           };
         };
       };
@@ -280,15 +228,6 @@ export interface paths {
             "application/json": components["schemas"]["Project"];
           };
         };
-        /** @description An error response */
-        default: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["ErrorResponsePayload"];
-          };
-        };
       };
     };
     put?: never;
@@ -316,15 +255,6 @@ export interface paths {
             };
           };
         };
-        /** @description An error response */
-        default: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["ErrorResponsePayload"];
-          };
-        };
       };
     };
     options?: never;
@@ -332,7 +262,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/teams/{team}/git-installations": {
+  "/teams/{team}/github-installations": {
     parameters: {
       query?: never;
       header?: never;
@@ -350,106 +280,13 @@ export interface paths {
       };
       requestBody?: never;
       responses: {
-        /** @description List of git installations */
+        /** @description GitHub installations */
         200: {
           headers: {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["GitInstallation"][];
-          };
-        };
-        /** @description An error response */
-        default: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["ErrorResponsePayload"];
-          };
-        };
-      };
-    };
-    put?: never;
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          team: string;
-        };
-        cookie?: never;
-      };
-      requestBody?: {
-        content: {
-          "application/json": components["schemas"]["GitInstallationParams"];
-        };
-      };
-      responses: {
-        /** @description Git installation created */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              id: number;
-            };
-          };
-        };
-        /** @description An error response */
-        default: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["ErrorResponsePayload"];
-          };
-        };
-      };
-    };
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/teams/{team}/git-installations/redirect": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          team: string;
-        };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description Git installation redirect */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              url: string;
-            };
-          };
-        };
-        /** @description An error response */
-        default: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["ErrorResponsePayload"];
+            "application/json": components["schemas"]["GitHubInstallation"][];
           };
         };
       };
@@ -462,7 +299,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/teams/{team}/git-installations/{id}": {
+  "/teams/{team}/github-installations/{installationId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -475,47 +312,36 @@ export interface paths {
         header?: never;
         path: {
           team: string;
-          id: number | null;
+          installationId: number | null;
         };
         cookie?: never;
       };
       requestBody?: never;
       responses: {
-        /** @description Git installation */
+        /** @description GitHub installation */
         200: {
           headers: {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["GitInstallation"];
-          };
-        };
-        /** @description An error response */
-        default: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["ErrorResponsePayload"];
+            "application/json": components["schemas"]["GitHubInstallation"];
           };
         };
       };
     };
-    put?: never;
-    post?: never;
-    delete: {
+    put: {
       parameters: {
         query?: never;
         header?: never;
         path: {
           team: string;
-          id: number | null;
+          installationId: number | null;
         };
         cookie?: never;
       };
       requestBody?: never;
       responses: {
-        /** @description Git installation deleted */
+        /** @description GitHub installation updated */
         200: {
           headers: {
             [name: string]: unknown;
@@ -526,23 +352,16 @@ export interface paths {
             };
           };
         };
-        /** @description An error response */
-        default: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["ErrorResponsePayload"];
-          };
-        };
       };
     };
+    post?: never;
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  "/teams/{team}/git-installations/{id}/repositories": {
+  "/teams/{team}/github-installations/{installationId}/repositories": {
     parameters: {
       query?: never;
       header?: never;
@@ -555,28 +374,57 @@ export interface paths {
         header?: never;
         path: {
           team: string;
-          id: number | null;
+          installationId: number | null;
         };
         cookie?: never;
       };
       requestBody?: never;
       responses: {
-        /** @description List of git repositories */
+        /** @description GitHub repositories */
         200: {
           headers: {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["GitRepository"][];
+            "application/json": components["schemas"]["GitHubRepository"][];
           };
         };
-        /** @description An error response */
-        default: {
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/teams/{team}/projects/{project}/deployments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          team: string;
+          project: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Deployments */
+        200: {
           headers: {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["ErrorResponsePayload"];
+            "application/json": unknown[];
           };
         };
       };
@@ -604,31 +452,21 @@ export interface components {
       /** Format: date-time */
       updatedAt: string;
     };
-    ErrorResponsePayload: {
-      message: string;
-      code: string;
-      details?: {
-        [key: string]: unknown;
-      };
-    };
-    GitRepository: {
-      id: number;
-      name: string;
-      url: string;
-      installationId: number;
-    };
     Project: {
       id: string;
       name: string;
       slug: string;
       teamId: string;
-      gitRepository: components["schemas"]["GitRepository"];
+      githubRepositoryId: number;
+      githubInstallationId: number;
+      githubRepositoryName: string;
+      githubRepositoryUrl: string;
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
       updatedAt: string;
     };
-    GitInstallation: {
+    GitHubInstallation: {
       id: number;
       teamId: string;
       /** @enum {string} */
@@ -640,12 +478,10 @@ export interface components {
       /** Format: date-time */
       updatedAt: string;
     };
-    TeamParams: {
-      /** @description Team ID or slug */
-      team: string;
-    };
-    GitInstallationParams: components["schemas"]["TeamParams"] & {
-      id: number | null;
+    GitHubRepository: {
+      id: number;
+      name: string;
+      url: string;
     };
   };
   responses: never;

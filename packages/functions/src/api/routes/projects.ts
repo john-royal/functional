@@ -5,7 +5,7 @@ import { createId } from "@paralleldrive/cuid2";
 import type { HonoEnv } from "../lib/env";
 import { APIError } from "../lib/error";
 import {
-  validateGitInstallation,
+  validateGitHubInstallation,
   validateProject,
   validateTeam,
 } from "../lib/helpers";
@@ -91,22 +91,11 @@ projectsRouter.openapi(
     const db = c.get("db");
     const body = c.req.valid("json");
     const projectId = createId();
+    const { team } = await validateGitHubInstallation(
+      c,
+      body.githubInstallationId
+    );
     await db.transaction(async (tx) => {
-      const [team, installation] = await Promise.all([
-        validateTeam(c, tx),
-        tx
-          .select()
-          .from(schema.githubInstallations)
-          .where(eq(schema.githubInstallations.id, body.githubInstallationId))
-          .limit(1)
-          .then(([installation]) => installation),
-      ]);
-      if (!installation || installation.teamId !== team.id) {
-        throw new APIError({
-          code: "NOT_FOUND",
-          message: "GitHub installation not found",
-        });
-      }
       await tx
         .insert(schema.projects)
         .values({
@@ -128,6 +117,32 @@ projectsRouter.openapi(
           }
           throw error;
         });
+    });
+    // const coordinatorId = c.env.DEPLOY_COORDINATOR.idFromName(team.id);
+    // const coordinator = c.env.DEPLOY_COORDINATOR.get(coordinatorId);
+    // await coordinator.enqueue(team.id, [
+    //   {
+    //     projectId: projectId,
+    //     status: "queued",
+    //     trigger: "manual",
+    //     commit: {
+    //       ref: "main",
+    //       message: "",
+    //       sha: "",
+    //     },
+    //     triggeredAt: new Date(),
+    //   },
+    // ]);
+    await c.env.GITHUB_QUEUE.send({
+      type: "push",
+      payload: {
+        installationId: body.githubInstallationId,
+        repositoryId: body.githubRepositoryId,
+        ref: "main",
+        message: "",
+        sha: "",
+        timestamp: Date.now(),
+      },
     });
     return c.json({ id: projectId }, 201);
   }
@@ -193,15 +208,22 @@ projectsRouter.openapi(
   }),
   async (c) => {
     const db = c.get("db");
-    const { project, team } = await validateProject(c);
-    if (!["admin", "owner"].includes(team.role)) {
-      throw new APIError({
-        code: "FORBIDDEN",
-        message: "You are not allowed to delete this project",
-      });
-    }
-    await db.delete(schema.projects).where(eq(schema.projects.id, project.id));
-    return c.json({ id: project.id });
+    return await db.transaction(async (tx) => {
+      const { project, team } = await validateProject(c, tx);
+      if (!["admin", "owner"].includes(team.role)) {
+        throw new APIError({
+          code: "FORBIDDEN",
+          message: "You are not allowed to delete this project",
+        });
+      }
+      await tx
+        .delete(schema.deployments)
+        .where(eq(schema.deployments.projectId, project.id));
+      await tx
+        .delete(schema.projects)
+        .where(eq(schema.projects.id, project.id));
+      return c.json({ id: project.id });
+    });
   }
 );
 export default projectsRouter;

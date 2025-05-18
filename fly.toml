@@ -1,22 +1,41 @@
-# fly.toml app configuration file generated for build-withered-frog-1103 on 2025-05-14T17:36:31-04:00
+# fly.toml app configuration file generated for functional-dry-cloud-4173 on 2025-05-17T23:47:22-04:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'build-withered-frog-1103'
-primary_region = 'ewr'
+app = 'functional'
+primary_region = 'fra'
 
+# --- Build Configuration ——————————————————————————————
 [build]
+  # Build directly from your Dockerfile
+  dockerfile = "Dockerfile"
+  # or, if you prefer Buildpacks:
+  # builder    = "paketobuildpacks/builder:base"
+  # buildpacks = ["gcr.io/paketo-buildpacks/nodejs"]
+# :contentReference[oaicite:1]{index=1}
 
-[http_service]
-  internal_port = 3000
-  force_https = true
-  auto_stop_machines = 'stop'
-  auto_start_machines = true
-  min_machines_running = 0
-  processes = ['app']
 
-[[vm]]
-  memory = '1gb'
-  cpu_kind = 'shared'
-  cpus = 1
+# --- Environment Variables —————————————————————————————
+[env]
+  # NODE_ENV = "production"
+  # add any secrets as Fly Secrets, not here (they won’t be available at build time)
+
+# --- Disable All Public Services ————————————————————————
+# By omitting any [[services]] or [http_service] sections,
+# flyctl will NOT bind port 80/443 (no public endpoints),
+# and Machines won’t be auto‐stopped for inactivity. :contentReference[oaicite:3]{index=3}
+
+# (Optional) If you find health-checks or default services kicking in,
+# you can explicitly block all ports:
+# [experimental]
+#   allowed_public_ports = []
+
+# --- Task Definition (Optional) —————————————————————————
+# If you’d like to give a named task you can run via `fly tasks run build`:
+# [tasks]
+#   build = "bash ./scripts/build.sh"  # or your build command
+
+# --- Graceful Shutdown ——————————————————————————————
+kill_signal  = "SIGTERM"
+kill_timeout = "60s"  # wait up to 60s for cleanup on SIGTERM

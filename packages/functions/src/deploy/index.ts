@@ -4,6 +4,9 @@ import type { Env } from "./lib/env";
 import { EventProcessor } from "./lib/event-processor";
 import { JWT } from "./lib/jwt";
 import { GitHubClient } from "../api/lib/github";
+import { zValidator } from "@hono/zod-validator";
+import { z } from "zod";
+import { BuildManifest } from "@functional/lib/build";
 
 export default {
   async fetch(request, env, ctx) {
@@ -23,30 +26,26 @@ export default {
           ref
         );
       })
-      .post("/artifact-upload", async (c) => {
-        const token = await c.get("jwt").verify("artifact-upload");
-        const data = await c.req.parseBody();
-        await Promise.all(
-          Object.entries(data).map(async ([key, value]) => {
-            await c.env.DEPLOYMENT_ARTIFACT_BUCKET.put(
-              `${token.properties.projectId}/${token.properties.deploymentId}/${key}`,
-              value instanceof File ? value.stream() : value
-            );
+      .post(
+        "/deploy",
+        zValidator(
+          "json",
+          z.object({
+            manifest: BuildManifest,
           })
-        );
-        return c.json({ success: true });
-      })
-      .post("/complete-deployment", async (c) => {
-        const token = await c.get("jwt").verify("complete-deployment");
-        const coordinatorId = c.env.DEPLOYMENT_COORDINATOR.idFromName(
-          token.properties.teamId
-        );
-        const coordinator = c.env.DEPLOYMENT_COORDINATOR.get(coordinatorId);
-        await coordinator.succeed(token.properties.deploymentId, {
-          workerName: "",
-        });
-        return c.json({ success: true });
-      });
+        ),
+        async (c) => {
+          const token = await c.get("jwt").verify("complete-deployment");
+          const workflow = await env.DEPLOYMENT_WORKFLOW.get(
+            token.properties.deploymentId
+          );
+          await workflow.sendEvent({
+            type: "complete-deployment",
+            payload: c.req.valid("json"),
+          });
+          return c.json({ success: true });
+        }
+      );
     return app.fetch(request, env, ctx);
   },
   async queue(batch, env, ctx) {
@@ -62,4 +61,4 @@ export default {
 } satisfies ExportedHandler<Env, GitHubEvent>;
 
 export { DeployCoordinator } from "./durable-objects/deploy-coordinator";
-export { DeployRunner } from "./durable-objects/deploy-runner";
+export { DeploymentWorkflow } from "./durable-objects/deployment-workflow";

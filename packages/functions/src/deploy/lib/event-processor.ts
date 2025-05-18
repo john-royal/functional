@@ -60,7 +60,13 @@ export class EventProcessor {
       })
     );
     const coordinatorId = this.env.DEPLOYMENT_COORDINATOR.idFromName(teamId);
+    console.log({
+      source: "EventProcessor",
+      coordinatorId,
+      coordinatorIdName: coordinatorId.name,
+      teamId,
+    });
     const coordinator = this.env.DEPLOYMENT_COORDINATOR.get(coordinatorId);
-    await coordinator.enqueue(deployments);
+    await coordinator.enqueue(teamId, deployments);
   }
 }

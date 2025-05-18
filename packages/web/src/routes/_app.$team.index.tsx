@@ -2,7 +2,7 @@ import { $api } from "@/api/fetch";
 import { useSuspenseQueries } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/_app/$team")({
+export const Route = createFileRoute("/_app/$team/")({
   component: RouteComponent,
   loader: ({ context, params }) => {
     void context.queryClient.prefetchQuery($api.queryOptions("get", "/teams"));
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_app/$team")({
       })
     );
     void context.queryClient.prefetchQuery(
-      $api.queryOptions("get", "/teams/{team}/git-installations", {
+      $api.queryOptions("get", "/teams/{team}/github-installations", {
         params: {
           path: {
             team: params.team,
@@ -57,7 +57,7 @@ function RouteComponent() {
             },
           },
         }),
-        $api.queryOptions("get", "/teams/{team}/git-installations", {
+        $api.queryOptions("get", "/teams/{team}/github-installations", {
           params: {
             path: {
               team,

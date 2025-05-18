@@ -17,6 +17,10 @@ export class GitHubClient {
     });
   }
 
+  async getInstallationUrl() {
+    return await this.app.getInstallationUrl();
+  }
+
   async getInstallation(id: number) {
     const res = await this.app.octokit.rest.apps.getInstallation({
       installation_id: id,
@@ -28,6 +32,7 @@ export class GitHubClient {
     const octokit = await this.getInstallationOctokit(installationId);
     const res = await octokit.rest.apps.listReposAccessibleToInstallation({
       installation_id: installationId,
+      per_page: 100,
     });
     return res.data;
   }
@@ -50,6 +55,7 @@ export class GitHubClient {
       {
         headers: {
           Authorization: `Bearer ${await this.getInstallationAccessToken(installationId)}`,
+          "User-Agent": "functional-deploy",
         },
       }
     );
@@ -59,5 +65,3 @@ export class GitHubClient {
     return await this.app.getInstallationOctokit(id);
   }
 }
-
-export class GitHubInstallationClient {

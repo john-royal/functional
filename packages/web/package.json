@@ -11,7 +11,7 @@
     "format": "biome format",
     "lint": "biome lint",
     "check": "biome check",
-    "generate-openapi": "openapi-typescript http://localhost:3001/docs -o src/api/openapi.gen.ts && biome check --fix src/api/openapi.gen.ts"
+    "generate-openapi": "openapi-typescript https://api.johnroyal.workers.dev/openapi.json -o src/api/openapi.gen.ts && biome check --fix src/api/openapi.gen.ts"
   },
   "dependencies": {
     "@functional/auth": "workspace:*",

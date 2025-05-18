@@ -4,8 +4,10 @@ import {
   Hyperdrive,
   KVNamespace,
   Queue,
+  R2Bucket,
   TanStackStart,
   Worker,
+  Workflow,
 } from "alchemy/cloudflare";
 import { NeonProject } from "alchemy/neon";
 import { Exec } from "alchemy/os";
@@ -59,7 +61,7 @@ const auth = await app.run(async (scope) => {
   });
   return await Worker("auth-issuer", {
     name: "auth",
-    entrypoint: "./packages/auth/src/worker.ts",
+    entrypoint: "./packages/functions/src/auth/index.ts",
     bindings: {
       AUTH_KV: authKv,
       HYPERDRIVE: db.hyperdrive,
@@ -72,14 +74,20 @@ const auth = await app.run(async (scope) => {
   });
 });
 
+const githubQueue = await Queue("github-queue", {
+  name: `functional-github-queue-${app.stage}`,
+});
+
 const api = await Worker("api", {
   name: "api",
-  entrypoint: "./packages/api/src/index.ts",
+  entrypoint: "./packages/functions/src/api/index.ts",
   bindings: {
     AUTH: auth,
+    AUTH_ISSUER: auth.url!,
     HYPERDRIVE: db.hyperdrive,
     GITHUB_APP_ID: alchemy.secret(process.env.GITHUB_APP_ID),
     GITHUB_PRIVATE_KEY: alchemy.secret(process.env.GITHUB_PRIVATE_KEY),
+    GITHUB_QUEUE: githubQueue,
     FRONTEND_URL: "https://web.johnroyal.workers.dev",
   },
   observability: { enabled: true },
@@ -87,13 +95,9 @@ const api = await Worker("api", {
   url: true,
 });
 
-const githubQueue = await Queue("github-queue", {
-  name: `functional-github-queue-${app.stage}`,
-});
-
-const github = await Worker("github", {
-  name: "github",
-  entrypoint: "./packages/api/src/github.ts",
+const webhook = await Worker("webhook", {
+  name: "webhook",
+  entrypoint: "./packages/functions/src/webhook/index.ts",
   bindings: {
     GITHUB_WEBHOOK_SECRET: alchemy.secret(process.env.GITHUB_WEBHOOK_SECRET),
     GITHUB_QUEUE: githubQueue,
@@ -103,21 +107,41 @@ const github = await Worker("github", {
   url: true,
 });
 
-const teamDeploymentCoordinator = new DurableObjectNamespace(
-  "team-deployment-coordinator",
-  {
-    className: "TeamDeploymentCoordinator",
-    sqlite: true,
-  }
-);
+const deployCoordinator = new DurableObjectNamespace("deploy-coordinator", {
+  className: "DeployCoordinator",
+  sqlite: true,
+});
 
-const internal = await Worker("internal", {
-  name: "internal",
-  entrypoint: "./packages/api/src/private/index.ts",
+const deploymentWorkflow = new Workflow("deployment-workflow", {
+  className: "DeploymentWorkflow",
+});
+
+const deployArtifactBucket = await R2Bucket("deploy-artifact-bucket", {
+  name: `functional-deploy-artifact-bucket-${app.stage}`,
+});
+
+const deploy = await Worker("deploy", {
+  name: "deploy",
+  entrypoint: "./packages/functions/src/deploy/index.ts",
   bindings: {
-    GITHUB_WEBHOOK_SECRET: alchemy.secret(process.env.GITHUB_WEBHOOK_SECRET),
+    API_URL: "https://deploy.johnroyal.workers.dev",
+    FLY_API_TOKEN: alchemy.secret(process.env.FLY_API_TOKEN),
+    FLY_APP_NAME: "functional",
+    FLY_CONTAINER_IMAGE: process.env.FLY_CONTAINER_IMAGE!,
+    CF_ACCOUNT_ID: alchemy.secret(process.env.CF_ACCOUNT_ID),
+    CF_R2_PARENT_ACCESS_KEY_ID: alchemy.secret(
+      process.env.CF_R2_PARENT_ACCESS_KEY_ID
+    ),
+    CF_API_TOKEN: alchemy.secret(process.env.CF_API_TOKEN),
+    CF_DISPATCH_NAMESPACE: "functional-staging",
+    DEPLOYMENT_JWT_SECRET: alchemy.secret(process.env.DEPLOYMENT_JWT_SECRET),
+    DEPLOYMENT_ARTIFACT_BUCKET_NAME: deployArtifactBucket.name,
+    DEPLOYMENT_ARTIFACT_BUCKET: deployArtifactBucket,
+    DEPLOYMENT_COORDINATOR: deployCoordinator,
+    DEPLOYMENT_WORKFLOW: deploymentWorkflow,
+    GITHUB_APP_ID: alchemy.secret(process.env.GITHUB_APP_ID),
+    GITHUB_PRIVATE_KEY: alchemy.secret(process.env.GITHUB_PRIVATE_KEY),
     HYPERDRIVE: db.hyperdrive,
-    TEAM_DEPLOYMENT_COORDINATOR: teamDeploymentCoordinator,
   },
   observability: { enabled: true },
   compatibilityFlags: ["nodejs_compat"],

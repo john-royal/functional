@@ -24,16 +24,17 @@ const handleInstall = createServerFn()
     if (!context.subject) {
       throw redirect({ to: "/auth" });
     }
-    const res = await apiFetch.POST("/teams/{team}/git-installations", {
-      params: {
-        path: {
-          team: context.subject.properties.defaultTeam.id,
+    const res = await apiFetch.PUT(
+      "/teams/{team}/github-installations/{installationId}",
+      {
+        params: {
+          path: {
+            team: context.subject.properties.defaultTeam.id,
+            installationId: data.id,
+          },
         },
-        body: {
-          id: data.id,
-        },
-      },
-    });
+      }
+    );
     return {
       data: res.data,
       error: res.error

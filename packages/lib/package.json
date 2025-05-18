@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "exports": {
+    "./build": "./src/build.ts",
     "./subjects": "./src/subjects.ts"
   },
   "devDependencies": {
