@@ -5,7 +5,7 @@
     "@cloudflare/workers-types": "^4.20250514.0",
     "@types/bun": "latest",
     "@types/node": "22",
-    "alchemy": "^0.16.2",
+    "alchemy": "^0.16.6",
     "cloudflare": "^4.2.0",
     "turbo": "^2.5.3"
   },
@@ -14,12 +14,22 @@
   },
   "packageManager": "bun@1.2.13",
   "scripts": {
-    "dev": "bun run packages/scripts/src/dev/index.ts",
-    "deploy": "bun run alchemy.run.ts"
+    "dev": "turbo run dev",
+    "deploy": "bun run alchemy.run.ts",
+    "deploy:fly": "fly deploy --update-only"
   },
   "private": true,
   "type": "module",
   "workspaces": [
     "packages/*"
+  ],
+  "trustedDependencies": [
+    "@biomejs/biome",
+    "@parcel/watcher",
+    "@rocicorp/zero-sqlite3",
+    "@tailwindcss/oxide",
+    "esbuild",
+    "protobufjs",
+    "workerd"
   ]
 }
