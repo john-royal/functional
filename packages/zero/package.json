@@ -1,0 +1,27 @@
+{
+  "name": "@functional/zero",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./react": "./src/react.ts",
+    "./schema": "./src/schema.ts"
+  },
+  "scripts": {
+    "generate": "drizzle-zero generate --format -o src/zero-schema.gen.ts",
+    "deploy-permissions": "zero-deploy-permissions",
+    "cache": "zero-cache",
+    "dev": "bun run dev.ts"
+  },
+  "dependencies": {
+    "@rocicorp/zero": "^0.19.2025050203",
+    "drizzle-zero": "^0.10.1"
+  },
+  "devDependencies": {
+    "@functional/db": "workspace:*",
+    "@types/bun": "^1.2.13"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

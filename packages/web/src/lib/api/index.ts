@@ -1,10 +1,11 @@
+import { authState } from "@/lib/server/auth";
 import createFetchClient from "openapi-fetch";
 import createClient from "openapi-react-query";
+import { clientEnv } from "../env";
 import type { paths } from "./openapi.gen";
-import { authState } from "@/lib/auth";
 
 export const apiFetch = createFetchClient<paths>({
-  baseUrl: import.meta.env.VITE_API_URL,
+  baseUrl: clientEnv.VITE_API_URL,
   fetch: async (input) => {
     const token = await (typeof window === "undefined"
       ? authState().then((res) => res.token)

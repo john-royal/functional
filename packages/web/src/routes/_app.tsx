@@ -1,22 +1,32 @@
-import { $api } from "@/api/fetch";
-import { authState } from "@/lib/auth";
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { authSignOut, authState } from "@/lib/server/auth";
+import { getZero } from "@/lib/zero";
+import { ZeroProvider } from "@functional/zero/react";
+import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/_app")({
   component: RouteComponent,
-  loader: async ({ context }) => {
-    const { subject } = await authState();
+  beforeLoad: async () => {
+    const { subject, token } = await authState();
     if (!subject) {
       throw redirect({ to: "/auth" });
     }
-    void context.queryClient.prefetchQuery($api.queryOptions("get", "/teams"));
+    return {
+      userID: subject.properties.id,
+      token,
+    };
   },
 });
 
 function RouteComponent() {
+  const context = Route.useRouteContext();
+  const zero = getZero(context);
+  const signOut = useServerFn(authSignOut);
   return (
-    <>
+    <ZeroProvider zero={zero}>
+      <Button onClick={() => signOut()}>Sign Out</Button>
       <Outlet />
-    </>
+    </ZeroProvider>
   );
 }

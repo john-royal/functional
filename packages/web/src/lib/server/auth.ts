@@ -1,8 +1,6 @@
-import {
-  createClient,
-  type Challenge,
-  type Tokens,
-} from "@openauthjs/openauth/client";
+import { env } from "cloudflare:workers";
+import { type Subject, subjects } from "@functional/lib/subjects";
+import { type Tokens, createClient } from "@openauthjs/openauth/client";
 import { redirect } from "@tanstack/react-router";
 import { createMiddleware, createServerFn } from "@tanstack/react-start";
 import {
@@ -10,21 +8,9 @@ import {
   getCookie,
   setCookie,
 } from "@tanstack/react-start/server";
+import { decodeJwt } from "jose";
 import z from "zod";
-import { env } from "cloudflare:workers";
-import { subjects, type Subject } from "@functional/lib/subjects";
-
-declare module "cloudflare:workers" {
-  namespace Cloudflare {
-    interface Env {
-      FRONTEND_URL: string;
-      AUTH_URL: string;
-      API_URL: string;
-      AUTH: Fetcher;
-      API: Fetcher;
-    }
-  }
-}
+import { useAppSession } from "./session";
 
 const redirectURI = `${env.FRONTEND_URL}/auth/callback`;
 
@@ -91,9 +77,9 @@ interface AuthenticatedContext {
 }
 
 interface UnauthenticatedContext {
-  subject: null;
-  token: null;
-  expiresAt: null;
+  subject?: undefined;
+  token?: undefined;
+  expiresAt?: undefined;
 }
 
 type AuthContext = AuthenticatedContext | UnauthenticatedContext;
@@ -107,7 +93,7 @@ export const authMiddleware = createMiddleware().server(async ({ next }) => {
     if (res.err) {
       clearTokens();
       return next<AuthContext>({
-        context: { subject: null, token: null, expiresAt: null },
+        context: {},
       });
     }
     if (res.tokens) {
@@ -124,33 +110,18 @@ export const authMiddleware = createMiddleware().server(async ({ next }) => {
     });
   }
   return next<AuthContext>({
-    context: { subject: null, token: null, expiresAt: null },
+    context: {},
   });
 });
 
 export const authState = createServerFn()
   .middleware([authMiddleware])
-  .handler(({ context }) => ({
-    subject: context.subject,
-    token: context.token,
-    expiresAt: context.expiresAt,
-  }));
-
-export const listTeams = createServerFn()
-  .middleware([authMiddleware])
   .handler(async ({ context }) => {
-    const res = await env.API.fetch(`${env.API_URL}/teams`, {
-      headers: {
-        Authorization: `Bearer ${context.token}`,
-      },
-    });
+    const session = await useAppSession();
     return {
       subject: context.subject,
-      teams: (await res.json()) as {
-        id: string;
-        name: string;
-        slug: string;
-      }[],
+      token: context.token,
+      expiresAt: context.expiresAt,
     };
   });
 
@@ -163,53 +134,47 @@ export const authRedirect = createServerFn().handler(async () => {
   const res = await authClient.authorize(redirectURI, "code", {
     provider: "github",
   });
-  setCookie("auth_challenge", JSON.stringify(res.challenge), {
-    path: "/",
-    httpOnly: true,
-    secure: false,
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24,
+  const session = await useAppSession();
+  await session.update({
+    challenge: res.challenge,
   });
   throw redirect({ href: res.url });
 });
 
-export const authCallbackSchema = z.union([
-  z.object({
-    state: z.string(),
-    code: z.string(),
-  }),
-  z.object({
-    error: z.string(),
-    error_description: z.string(),
-  }),
-]);
+export const authCallbackSchema = z.object({
+  state: z.string(),
+  code: z.string(),
+});
 
 export const authCallback = createServerFn()
   .validator(authCallbackSchema)
   .handler(async ({ data }) => {
-    if ("error" in data) {
-      return data;
+    const session = await useAppSession();
+    if (!session.data.challenge) {
+      throw redirect({ to: "/auth" });
     }
-    const challenge = JSON.parse(
-      getCookie("auth_challenge") ?? "null"
-    ) as Challenge | null;
-    if (!challenge) {
-      return { error: "no_challenge" };
+    const { state, verifier } = session.data.challenge;
+    await session.update({
+      challenge: undefined,
+    });
+    if (data.state !== state) {
+      throw redirect({ to: "/auth" });
     }
-    deleteCookie("auth_challenge");
-    if (data.state !== challenge.state) {
-      return { error: "invalid_state" };
-    }
-    const res = await authClient.exchange(
-      data.code,
-      redirectURI,
-      challenge.verifier
-    );
+    const res = await authClient.exchange(data.code, redirectURI, verifier);
     if (res.err) {
-      return { error: "exchange_error" };
+      throw redirect({ to: "/auth" });
     }
-    if (res.tokens) {
-      setTokens(res.tokens);
-    }
-    throw redirect({ href: "/" });
+    const subject = decodeJwt<Subject>(res.tokens.access);
+    setTokens(res.tokens);
+    throw redirect({
+      to: "/$team",
+      params: { team: subject.properties.defaultTeam.slug },
+    });
   });
+
+export const authSignOut = createServerFn().handler(async () => {
+  clearTokens();
+  const session = await useAppSession();
+  await session.clear();
+  throw redirect({ to: "/auth" });
+});

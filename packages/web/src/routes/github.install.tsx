@@ -1,7 +1,17 @@
-import { apiFetch } from "@/api/fetch";
-import { authMiddleware } from "@/lib/auth";
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  handleGitHubInstall,
+  redirectToGitHubInstall,
+} from "@/lib/server/github";
+import { Await, Link, createFileRoute, defer } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 export const Route = createFileRoute("/github/install")({
@@ -10,47 +20,82 @@ export const Route = createFileRoute("/github/install")({
     installation_id: z.coerce.number(),
   }),
   loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => {
-    return await handleInstall({
-      data: { id: deps.installation_id },
-    });
+  loader: ({ deps }) => {
+    return {
+      result: defer(
+        handleGitHubInstall({
+          data: { installationId: deps.installation_id },
+        }),
+      ),
+    };
   },
 });
 
-const handleInstall = createServerFn()
-  .validator(z.object({ id: z.number() }))
-  .middleware([authMiddleware])
-  .handler(async ({ context, data }) => {
-    if (!context.subject) {
-      throw redirect({ to: "/auth" });
-    }
-    const res = await apiFetch.PUT(
-      "/teams/{team}/github-installations/{installationId}",
-      {
-        params: {
-          path: {
-            team: context.subject.properties.defaultTeam.id,
-            installationId: data.id,
-          },
-        },
-      }
-    );
-    return {
-      data: res.data,
-      error: res.error
-        ? {
-            message: res.error.message,
-            code: res.error.code,
-          }
-        : undefined,
-    };
-  });
-
 function RouteComponent() {
   const data = Route.useLoaderData();
+  const handleRedirect = useServerFn(redirectToGitHubInstall);
+
   return (
-    <pre>
-      <code>{JSON.stringify(data, null, 2)}</code>
-    </pre>
+    <Await
+      promise={data.result}
+      fallback={
+        <Card>
+          <CardHeader>
+            <CardTitle>Loading...</CardTitle>
+            <CardDescription>
+              Please wait while we install the GitHub app.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      }
+    >
+      {(result) => {
+        if (result.success) {
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>GitHub App Installed</CardTitle>
+                <CardDescription>
+                  You can close this page or continue to Functional.
+                </CardDescription>
+              </CardHeader>
+              <CardFooter>
+                <Button asChild>
+                  <Link to="/">Continue</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          );
+        }
+        if (result.error.code === "UNAUTHORIZED") {
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>App Installation Failed</CardTitle>
+                <CardDescription>Please sign in to continue.</CardDescription>
+              </CardHeader>
+              <CardFooter>
+                <Button asChild>
+                  <Link to="/auth">Sign in</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          );
+        }
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>App Installation Failed</CardTitle>
+              <CardDescription>{result.error.message}</CardDescription>
+            </CardHeader>
+            <CardFooter>
+              <Button onClick={() => handleRedirect({ data: {} })}>
+                Try again
+              </Button>
+            </CardFooter>
+          </Card>
+        );
+      }}
+    </Await>
   );
 }

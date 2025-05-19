@@ -1,19 +1,29 @@
-import { authCallback, authCallbackSchema } from "@/lib/auth";
-import { createFileRoute } from "@tanstack/react-router";
+import { authCallback, authCallbackSchema } from "@/lib/server/auth";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { z } from "zod";
 
 export const Route = createFileRoute("/auth/callback")({
-  component: RouteComponent,
-  validateSearch: authCallbackSchema,
+  validateSearch: z.union([
+    authCallbackSchema,
+    z.object({
+      error: z.string().optional(),
+      error_description: z.string().optional(),
+    }),
+  ]),
   loaderDeps: ({ search }) => search,
-  loader: ({ deps }) => authCallback({ data: deps }),
+  loader: ({ deps }) => {
+    if (!("state" in deps)) {
+      throw redirect({
+        to: "/auth",
+        search: {
+          error: deps.error,
+          error_description: deps.error_description,
+        },
+      });
+    }
+    return authCallback({ data: deps as z.infer<typeof authCallbackSchema> });
+  },
+  pendingComponent: () => <div>Loading...</div>,
+  errorComponent: () => <div>Error</div>,
+  pendingMinMs: 0,
 });
-
-function RouteComponent() {
-  const data = Route.useLoaderData();
-  return (
-    <div>
-      <p>Hello "/auth/callback"!</p>
-      <pre>{JSON.stringify(data, null, 2)}</pre>
-    </div>
-  );
-}

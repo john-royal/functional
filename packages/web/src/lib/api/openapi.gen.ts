@@ -218,10 +218,7 @@ export interface paths {
           "application/json": {
             name: string;
             slug: string;
-            githubRepositoryId: number;
-            githubInstallationId: number;
-            githubRepositoryName: string;
-            githubRepositoryUrl: string;
+            githubRepository: components["schemas"]["GitHubRepository"];
           };
         };
       };
@@ -576,15 +573,21 @@ export interface components {
         [key: string]: unknown;
       };
     };
+    GitHubRepository: {
+      id: number;
+      name: string;
+      owner: string;
+      url: string;
+      private: boolean;
+      defaultBranch: string;
+      installationId: number;
+    };
     Project: {
       id: string;
       name: string;
       slug: string;
       teamId: string;
-      githubRepositoryId: number;
-      githubInstallationId: number;
-      githubRepositoryName: string;
-      githubRepositoryUrl: string;
+      githubRepository: components["schemas"]["GitHubRepository"];
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
@@ -601,11 +604,6 @@ export interface components {
       createdAt: string;
       /** Format: date-time */
       updatedAt: string;
-    };
-    GitHubRepository: {
-      id: number;
-      name: string;
-      url: string;
     };
   };
   responses: never;

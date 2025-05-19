@@ -30,6 +30,7 @@ const devBindingsPlugin: PluginOption = {
             return fetch(req);
           },
         },
+        SESSION_SECRET: "${process.env.SESSION_SECRET}",
       };`;
     }
   },

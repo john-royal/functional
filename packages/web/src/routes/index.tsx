@@ -1,4 +1,4 @@
-import { authState } from "@/lib/auth";
+import { authState } from "@/lib/server/auth";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
