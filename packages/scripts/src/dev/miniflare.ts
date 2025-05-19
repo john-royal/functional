@@ -25,7 +25,7 @@ export class MiniflareController {
   workers = new Map<string, Awaited<ReturnType<Miniflare["getWorker"]>>>();
   miniflarePromise = Promise.withResolvers<Miniflare>();
   miniflare?: Miniflare;
-
+  mutex = new Mutex();
   constructor(readonly options: MiniflareControllerOptions) {
     for (const { port, ...worker } of options.workers) {
       const build = new BuildController({
@@ -41,17 +41,17 @@ export class MiniflareController {
   }
 
   async init() {
-    await Promise.all(
-      Array.from(this.buildControllers.entries()).map(async ([name, build]) =>
-        this.workerOptions.set(name, await build.init())
-      )
-    );
-    this.miniflare = new Miniflare(this.createMiniflareOptions());
-    await this.miniflare.ready;
-    this.miniflarePromise.resolve(this.miniflare);
-    for (const [name, server] of this.servers.entries()) {
-      console.log(`[${name}] listening on ${server.url}`);
-    }
+    await this.mutex.runExclusive(async () => {
+      await Promise.all(
+        Array.from(this.buildControllers.entries()).map(async ([name, build]) =>
+          this.workerOptions.set(name, await build.init())
+        )
+      );
+      await this.create();
+      for (const [name, server] of this.servers.entries()) {
+        console.log(`[${name}] listening on ${server.url}`);
+      }
+    });
   }
 
   async update(name: string, workerOptions: WorkerOptions) {
@@ -59,9 +59,27 @@ export class MiniflareController {
       throw new Error("Worker updated, but Miniflare not initialized");
     }
     this.workerOptions.set(name, workerOptions);
-    await this.miniflare.setOptions(this.createMiniflareOptions());
-    this.workers.clear();
-    console.log(`[${name}] updated`);
+    console.log(`[${name}] updating`);
+    await this.mutex.runExclusive(async () => {
+      await this.create();
+    });
+  }
+
+  async create() {
+    await this.dispose();
+    this.miniflare = new Miniflare(this.createMiniflareOptions());
+    await this.miniflare.ready;
+    this.miniflarePromise.resolve(this.miniflare);
+  }
+
+  private async dispose() {
+    if (this.miniflare) {
+      const miniflare = this.miniflare;
+      this.workers.clear();
+      this.miniflarePromise = Promise.withResolvers<Miniflare>();
+      this.miniflare = undefined;
+      await miniflare.dispose();
+    }
   }
 
   createProxyServer(name: string, port: number) {
@@ -98,5 +116,30 @@ export class MiniflareController {
       kvPersist: join(this.options.cwd, ".dev", "mf", "kv"),
       r2Persist: join(this.options.cwd, ".dev", "mf", "r2"),
     };
+  }
+}
+
+class Mutex {
+  private locked = false;
+  private queue = Promise.resolve();
+
+  async acquire() {
+    await this.queue;
+    this.locked = true;
+    const { promise, resolve } = Promise.withResolvers<void>();
+    this.queue = promise;
+    return resolve;
+  }
+
+  async runExclusive<T>(fn: () => Promise<T>) {
+    const release = await this.acquire();
+    try {
+      return await fn();
+    } catch (error) {
+      console.error(`[Mutex] runExclusive failed`, error);
+      throw error;
+    } finally {
+      release();
+    }
   }
 }

@@ -1,4 +1,3 @@
-import { join } from "node:path";
 import { MiniflareController } from "./miniflare";
 import { $ } from "bun";
 
@@ -45,6 +44,11 @@ const miniflare = new MiniflareController({
             scriptName: "deploy",
           },
         },
+        queueProducers: {
+          MESSAGE_QUEUE: {
+            queueName: "message-queue",
+          },
+        },
       },
     },
     {
@@ -82,14 +86,15 @@ const miniflare = new MiniflareController({
             className: "DeploymentWorkflow",
           },
         },
+        queueProducers: {
+          MESSAGE_QUEUE: {
+            queueName: "message-queue",
+          },
+        },
+        queueConsumers: ["message-queue"],
       },
     },
   ],
 });
 
-await Promise.all([
-  miniflare.init(),
-  $.cwd(join(process.cwd(), "packages", "web")).env({
-    VITE_API_URL: "http://localhost:3001",
-  })`bun run dev`,
-]);
+await miniflare.init();

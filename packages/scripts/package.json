@@ -3,6 +3,9 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "dev": "bun run  --cwd ../../ packages/scripts/src/dev/index.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "esbuild": "^0.25.4",
