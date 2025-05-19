@@ -161,6 +161,7 @@ await TanStackStart("web", {
     FRONTEND_URL: "https://web.johnroyal.workers.dev",
     AUTH: auth,
     API: api,
+    SESSION_SECRET: alchemy.secret(process.env.SESSION_SECRET),
   },
   observability: {
     enabled: true,

@@ -10,15 +10,15 @@ export const redirectToGitHubInstall = createServerFn()
   .validator(
     z.object({
       team: z.string().optional(),
-    }),
+    })
   )
   .handler(async ({ data }) => {
     const session = await useAppSession();
     if (data.team) {
-      session.update({ team: data.team });
+      await session.update({ team: data.team });
     }
     throw redirect({
-      href: "https://github.com/apps/functional-dev/installations/new",
+      href: "https://github.com/apps/functional-dev/installations/select-target",
     });
   });
 
@@ -36,7 +36,7 @@ export const handleGitHubInstall = createServerFn()
   .validator(
     z.object({
       installationId: z.number(),
-    }),
+    })
   )
   .handler(async ({ context, data }): Promise<GitHubInstallationResult> => {
     if (!context.subject) {
@@ -57,7 +57,7 @@ export const handleGitHubInstall = createServerFn()
             installationId: data.installationId,
           },
         },
-      },
+      }
     );
     if (res.error) {
       return { success: false, error: res.error };

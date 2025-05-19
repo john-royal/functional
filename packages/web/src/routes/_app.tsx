@@ -1,9 +1,8 @@
-import { Button } from "@/components/ui/button";
-import { authSignOut, authState } from "@/lib/server/auth";
+import { Navbar } from "@/components/navbar";
+import { authState } from "@/lib/server/auth";
 import { getZero } from "@/lib/zero";
 import { ZeroProvider } from "@functional/zero/react";
-import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_app")({
   component: RouteComponent,
@@ -13,19 +12,22 @@ export const Route = createFileRoute("/_app")({
       throw redirect({ to: "/auth" });
     }
     return {
-      userID: subject.properties.id,
+      subject,
       token,
     };
   },
 });
 
 function RouteComponent() {
-  const context = Route.useRouteContext();
-  const zero = getZero(context);
-  const signOut = useServerFn(authSignOut);
+  const { subject, token } = Route.useRouteContext();
+  const zero = getZero({
+    userID: subject.properties.id,
+    token,
+  });
+
   return (
     <ZeroProvider zero={zero}>
-      <Button onClick={() => signOut()}>Sign Out</Button>
+      <Navbar />
       <Outlet />
     </ZeroProvider>
   );

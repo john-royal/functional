@@ -10,16 +10,12 @@ export const apiFetch = createFetchClient<paths>({
     const token = await (typeof window === "undefined"
       ? authState().then((res) => res.token)
       : getClientToken());
-    const request = new Request(input, {
-      method: input.method,
-      body: input.body,
-      headers: { ...input.headers, Authorization: `Bearer ${token}` },
-    });
+    input.headers.set("Authorization", `Bearer ${token}`);
     if (typeof window === "undefined") {
       const { env } = await import("cloudflare:workers");
-      return env.API.fetch(request);
+      return env.API.fetch(input);
     }
-    return fetch(request);
+    return fetch(input);
   },
 });
 

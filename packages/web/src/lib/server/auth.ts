@@ -1,6 +1,5 @@
-import { env } from "cloudflare:workers";
-import { type Subject, subjects } from "@functional/lib/subjects";
-import { type Tokens, createClient } from "@openauthjs/openauth/client";
+import { subjects, type Subject } from "@functional/lib/subjects";
+import { createClient, type Tokens } from "@openauthjs/openauth/client";
 import { redirect } from "@tanstack/react-router";
 import { createMiddleware, createServerFn } from "@tanstack/react-start";
 import {
@@ -8,9 +7,10 @@ import {
   getCookie,
   setCookie,
 } from "@tanstack/react-start/server";
-import { decodeJwt } from "jose";
+import { env } from "cloudflare:workers";
 import z from "zod";
 import { useAppSession } from "./session";
+import { decodeJwt } from "jose";
 
 const redirectURI = `${env.FRONTEND_URL}/auth/callback`;
 
@@ -117,7 +117,6 @@ export const authMiddleware = createMiddleware().server(async ({ next }) => {
 export const authState = createServerFn()
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
-    const session = await useAppSession();
     return {
       subject: context.subject,
       token: context.token,

@@ -30,6 +30,19 @@ export const Route = createRootRouteWithContext<{
         rel: "stylesheet",
         href: appCss,
       },
+      {
+        rel: "preconnect",
+        href: "https://fonts.googleapis.com",
+      },
+      {
+        rel: "preconnect",
+        href: "https://fonts.gstatic.com",
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap",
+      },
     ],
   }),
 
@@ -47,7 +60,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body className="dark bg-background text-foreground">
         {children}
         <Scripts />
       </body>

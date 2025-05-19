@@ -16,7 +16,6 @@ function createServerZero({ token, ...options }: CreateZeroOptions) {
     ...options,
     auth: token,
     schema,
-    server: undefined,
     kvStore: "mem",
     logLevel: "error",
   });
