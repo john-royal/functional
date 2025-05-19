@@ -2,7 +2,7 @@ import { subjects } from "@functional/lib/subjects";
 import { issuer } from "@openauthjs/openauth";
 import { GithubProvider } from "@openauthjs/openauth/provider/github";
 import { CloudflareStorage } from "@openauthjs/openauth/storage/cloudflare";
-import { DatabaseClient, GitHub } from "./lib";
+import { DatabaseClient, GitHubAuthClient } from "./lib";
 
 interface Env {
   AUTH_KV: KVNamespace;
@@ -13,7 +13,8 @@ interface Env {
 
 export default {
   async fetch(request, env, ctx) {
-    const db = new DatabaseClient(env.HYPERDRIVE.connectionString);
+    const db = new DatabaseClient(env.HYPERDRIVE.connectionString, ctx);
+    const github = new GitHubAuthClient(ctx);
     const app = issuer({
       storage: CloudflareStorage({
         namespace: env.AUTH_KV,
@@ -27,9 +28,11 @@ export default {
         }),
       },
       success: async (ctx, input) => {
-        const profile = await GitHub.fetchProfile(input.tokenset.access);
-        const user = await db.findOrCreateUser(profile);
-        return ctx.subject("user", user);
+        const profile = await github.fetchProfile(input.tokenset.access);
+        const user = await db.upsertUser(profile);
+        return ctx.subject("user", user, {
+          subject: user.id,
+        });
       },
     });
     if (request.url.includes("/.well-known")) {

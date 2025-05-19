@@ -6,24 +6,52 @@ import {
 } from "@functional/db/client";
 import { createId } from "@paralleldrive/cuid2";
 
+export interface UpsertUser {
+  id: string;
+  defaultTeam: {
+    id: string;
+    slug: string;
+  };
+}
+
+export interface GitHubProfile {
+  id: number;
+  name: string;
+  login: string;
+  email: string;
+  avatar_url: string;
+}
+
 export class DatabaseClient {
   db: Database;
 
-  constructor(connectionString: string) {
+  constructor(
+    connectionString: string,
+    private readonly ctx: ExecutionContext
+  ) {
     this.db = createDatabaseClient(connectionString);
   }
 
-  async findOrCreateUser(profile: GitHub.Profile) {
-    return await this.db.transaction(async (tx) => {
+  async upsertUser(profile: GitHubProfile): Promise<UpsertUser> {
+    const key = new URL(
+      `https://auth.functional.dev/cache/github-user/${profile.id}`
+    );
+    const cached = await caches.default.match(key);
+    if (cached) {
+      return cached.json<UpsertUser>();
+    }
+    const user = await this.db.transaction(async (tx) => {
       const user = await this.findUser(tx, profile.id);
       if (user) {
         return user;
       }
       return await this.createUser(tx, profile);
     });
+    this.ctx.waitUntil(caches.default.put(key, Response.json(user)));
+    return user;
   }
 
-  async findUser(tx: DatabaseTransaction, githubId: number) {
+  private async findUser(tx: DatabaseTransaction, githubId: number) {
     const [user] = await tx
       .select({
         id: schema.users.id,
@@ -52,7 +80,7 @@ export class DatabaseClient {
     };
   }
 
-  async createUser(tx: DatabaseTransaction, profile: GitHub.Profile) {
+  private async createUser(tx: DatabaseTransaction, profile: GitHubProfile) {
     const userId = createId();
     const teamId = createId();
     await tx.insert(schema.teams).values({
@@ -91,16 +119,10 @@ export class DatabaseClient {
   }
 }
 
-export namespace GitHub {
-  export interface Profile {
-    id: number;
-    name: string;
-    login: string;
-    email: string;
-    avatar_url: string;
-  }
+export class GitHubAuthClient {
+  constructor(private readonly ctx: ExecutionContext) {}
 
-  export const fetchProfile = async (accessToken: string) => {
+  async fetchProfile(accessToken: string): Promise<GitHubProfile> {
     const res = await fetch("https://api.github.com/user", {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -110,14 +132,25 @@ export namespace GitHub {
     if (!res.ok) {
       throw new Error(`Failed to fetch user info: ${res.statusText}`);
     }
-    const user = await res.json<Profile>();
+    const user = await res.json<GitHubProfile>();
     if (!user.email) {
-      user.email = await fetchEmail(accessToken);
+      user.email = await this.fetchEmailWithCache(user.id, accessToken);
     }
     return user;
-  };
+  }
 
-  const fetchEmail = async (accessToken: string) => {
+  async fetchEmailWithCache(id: number, accessToken: string) {
+    const key = new URL(`https://auth.functional.dev/cache/github-email/${id}`);
+    const cached = await caches.default.match(key);
+    if (cached) {
+      return cached.text();
+    }
+    const email = await this.fetchEmail(accessToken);
+    this.ctx.waitUntil(caches.default.put(key, new Response(email)));
+    return email;
+  }
+
+  async fetchEmail(accessToken: string) {
     const res = await fetch("https://api.github.com/user/emails", {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -137,5 +170,5 @@ export namespace GitHub {
       throw new Error("No emails found");
     }
     return emails[0].email;
-  };
+  }
 }
