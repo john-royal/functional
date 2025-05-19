@@ -4,7 +4,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "push": "drizzle-kit push"
+    "push": "drizzle-kit push",
+    "dev": "drizzle-kit studio"
   },
   "exports": {
     ".": "./index.ts",

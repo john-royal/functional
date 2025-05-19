@@ -96,6 +96,15 @@ export const schema = {
             "id"
           >,
         },
+        teamId: {
+          type: "string",
+          optional: false,
+          customType: null as unknown as ZeroCustomType<
+            typeof zeroSchema,
+            "deployments",
+            "teamId"
+          >,
+        },
         projectId: {
           type: "string",
           optional: false,
@@ -685,6 +694,14 @@ export const schema = {
           cardinality: "one",
         },
       ],
+      team: [
+        {
+          sourceField: ["teamId"],
+          destField: ["id"],
+          destSchema: "teams",
+          cardinality: "one",
+        },
+      ],
     },
     githubInstallations: {
       team: [
@@ -767,7 +784,7 @@ export const schema = {
       ],
     },
     teams: {
-      members: [
+      teamMembers: [
         {
           sourceField: ["id"],
           destField: ["teamId"],

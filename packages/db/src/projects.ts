@@ -7,8 +7,10 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { cuid, timestamps } from "./columns";
-import { githubInstallations } from "./github";
+import { githubRepositories } from "./github";
 import { teams } from "./teams";
+import { relations } from "drizzle-orm";
+import { deployments } from "./deployments";
 
 export const projects = pgTable("projects", {
   id: cuid().primaryKey(),
@@ -17,14 +19,24 @@ export const projects = pgTable("projects", {
   teamId: cuid()
     .notNull()
     .references(() => teams.id),
-  githubRepositoryId: bigint({ mode: "number" }).notNull(),
-  githubInstallationId: bigint({ mode: "number" })
+  githubRepositoryId: bigint({ mode: "number" })
     .notNull()
-    .references(() => githubInstallations.id),
-  githubRepositoryName: varchar({ length: 255 }).notNull(),
-  githubRepositoryUrl: varchar({ length: 255 }).notNull(),
+    .references(() => githubRepositories.id),
+  gitProductionBranch: varchar({ length: 255 }),
   ...timestamps(),
 });
+
+export const projectsRelations = relations(projects, ({ one, many }) => ({
+  team: one(teams, {
+    fields: [projects.teamId],
+    references: [teams.id],
+  }),
+  githubRepository: one(githubRepositories, {
+    fields: [projects.githubRepositoryId],
+    references: [githubRepositories.id],
+  }),
+  deployments: many(deployments),
+}));
 
 export const environmentVariables = pgTable("environment_variables", {
   id: cuid().primaryKey(),

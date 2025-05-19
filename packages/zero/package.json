@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@functional/db": "workspace:*",
+    "@functional/lib": "workspace:*",
     "@types/bun": "^1.2.13"
   },
   "peerDependencies": {

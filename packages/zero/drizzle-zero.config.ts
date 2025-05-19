@@ -57,6 +57,7 @@ export default drizzleZeroConfig(schema, {
     environmentVariableTargets: false,
     deployments: {
       id: true,
+      teamId: true,
       projectId: true,
       status: true,
       trigger: true,
