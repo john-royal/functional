@@ -1,12 +1,12 @@
+import { BuildManifest } from "@functional/lib/build";
+import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
-import type { GitHubEvent } from "../webhook/event";
+import { z } from "zod";
+import { GitHubClient } from "../api/lib/github";
+import type { QueueMessage } from "../event";
 import type { Env } from "./lib/env";
 import { EventProcessor } from "./lib/event-processor";
 import { JWT } from "./lib/jwt";
-import { GitHubClient } from "../api/lib/github";
-import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
-import { BuildManifest } from "@functional/lib/build";
 
 export default {
   async fetch(request, env, ctx) {
@@ -66,7 +66,7 @@ export default {
       })
     );
   },
-} satisfies ExportedHandler<Env, GitHubEvent>;
+} satisfies ExportedHandler<Env, QueueMessage>;
 
 export { DeployCoordinator } from "./durable-objects/deploy-coordinator";
 export { DeploymentWorkflow } from "./durable-objects/deployment-workflow";

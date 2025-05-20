@@ -1,9 +1,9 @@
 import { Webhooks, type WebhookError } from "@octokit/webhooks";
-import type { GitHubEvent } from "./event";
+import type { QueueMessage } from "../event";
 
 interface Env {
   GITHUB_WEBHOOK_SECRET: string;
-  GITHUB_QUEUE: Queue<GitHubEvent>;
+  MESSAGE_QUEUE: Queue<QueueMessage>;
 }
 
 export default {
@@ -53,8 +53,8 @@ function createWebhookHandler(env: Env) {
   });
 
   webhooks.on("installation.deleted", async (event) => {
-    await env.GITHUB_QUEUE.send({
-      type: "installation.deleted",
+    await env.MESSAGE_QUEUE.send({
+      type: "github.installation.deleted",
       payload: {
         installationId: event.payload.installation.id,
       },
@@ -62,8 +62,8 @@ function createWebhookHandler(env: Env) {
   });
 
   webhooks.on("push", async (event) => {
-    await env.GITHUB_QUEUE.send({
-      type: "push",
+    await env.MESSAGE_QUEUE.send({
+      type: "github.push",
       payload: {
         installationId: event.payload.installation!.id,
         repositoryId: event.payload.repository.id,

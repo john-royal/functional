@@ -87,7 +87,7 @@ const api = await Worker("api", {
     HYPERDRIVE: db.hyperdrive,
     GITHUB_APP_ID: alchemy.secret(process.env.GITHUB_APP_ID),
     GITHUB_PRIVATE_KEY: alchemy.secret(process.env.GITHUB_PRIVATE_KEY),
-    GITHUB_QUEUE: githubQueue,
+    MESSAGE_QUEUE: githubQueue,
     FRONTEND_URL: "https://web.johnroyal.workers.dev",
   },
   observability: { enabled: true },
@@ -100,7 +100,7 @@ const webhook = await Worker("webhook", {
   entrypoint: "./packages/functions/src/webhook/index.ts",
   bindings: {
     GITHUB_WEBHOOK_SECRET: alchemy.secret(process.env.GITHUB_WEBHOOK_SECRET),
-    GITHUB_QUEUE: githubQueue,
+    MESSAGE_QUEUE: githubQueue,
   },
   observability: { enabled: true },
   compatibilityFlags: ["nodejs_compat"],

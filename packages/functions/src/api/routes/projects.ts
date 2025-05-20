@@ -125,15 +125,12 @@ projectsRouter.openapi(
           throw error;
         });
     });
-    await c.env.GITHUB_QUEUE.send({
-      type: "push",
+    await c.env.MESSAGE_QUEUE.send({
+      type: "project.created",
       payload: {
-        installationId: body.githubInstallationId,
-        repositoryId: body.githubRepositoryId,
-        ref: "main",
-        message: "",
-        sha: "",
-        timestamp: Date.now(),
+        githubRepositoryId: body.githubRepository.id,
+        projectId,
+        githubInstallationId: body.githubRepository.installationId,
       },
     });
     return c.json({ id: projectId }, 201);
