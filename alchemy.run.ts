@@ -14,13 +14,13 @@ import { Exec } from "alchemy/os";
 
 const app = await alchemy("functional", {
   password: process.env.ALCHEMY_PASSWORD,
-  phase: "up",
+  phase: process.argv.includes("--destroy") ? "destroy" : "up",
 });
 
 const db = await app.run(async (scope) => {
-  const db = await NeonProject("neon", {
+  const db = await NeonProject("neon-project", {
     name: "functional-db",
-    region_id: "aws-us-east-2",
+    region_id: "aws-us-east-1",
     pg_version: 17,
   });
   const hyperdrive = await Hyperdrive("neon-hyperdrive", {
