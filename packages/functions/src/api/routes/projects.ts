@@ -1,4 +1,4 @@
-import { and, eq, or, schema } from "@functional/db";
+import { eq, getTableColumns, or, schema } from "@functional/db";
 import { isUniqueViolation } from "@functional/db/utils";
 import { OpenAPIHono, z } from "@hono/zod-openapi";
 import { createId } from "@paralleldrive/cuid2";
@@ -10,6 +10,7 @@ import {
   validateTeam,
 } from "../lib/helpers";
 import { describeRoute } from "../lib/openapi";
+import { githubRepositorySchema } from "./github-installations";
 
 const projectParams = z.object({
   team: z.string(),
@@ -22,14 +23,29 @@ export const projectSchema = z
     name: z.string(),
     slug: z.string(),
     teamId: z.string(),
-    githubRepositoryId: z.number(),
-    githubInstallationId: z.number(),
-    githubRepositoryName: z.string(),
-    githubRepositoryUrl: z.string(),
+    githubRepository: githubRepositorySchema,
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
   })
   .openapi("Project");
+
+const queryColumns = () => {
+  const { githubRepositoryId: _, ...columns } = getTableColumns(
+    schema.projects
+  );
+  return {
+    ...columns,
+    githubRepository: {
+      id: schema.githubRepositories.id,
+      name: schema.githubRepositories.name,
+      owner: schema.githubRepositories.owner,
+      url: schema.githubRepositories.url,
+      private: schema.githubRepositories.private,
+      defaultBranch: schema.githubRepositories.defaultBranch,
+      installationId: schema.githubRepositories.installationId,
+    },
+  } as const;
+};
 
 const projectsRouter = new OpenAPIHono<HonoEnv>();
 
@@ -57,9 +73,13 @@ projectsRouter.openapi(
     const db = c.get("db");
     const team = await validateTeam(c);
     const projects = await db
-      .select()
+      .select(queryColumns())
       .from(schema.projects)
-      .where(eq(schema.projects.teamId, team.id));
+      .where(eq(schema.projects.teamId, team.id))
+      .innerJoin(
+        schema.githubRepositories,
+        eq(schema.projects.githubRepositoryId, schema.githubRepositories.id)
+      );
     return c.json(projects);
   }
 );
@@ -100,9 +120,13 @@ projectsRouter.openapi(
     const projectId = createId();
     const { team } = await validateGitHubInstallation(
       c,
-      body.githubInstallationId
+      body.githubRepository.installationId
     );
     await db.transaction(async (tx) => {
+      await tx
+        .insert(schema.githubRepositories)
+        .values(body.githubRepository)
+        .onConflictDoNothing();
       await tx
         .insert(schema.projects)
         .values({
@@ -110,10 +134,8 @@ projectsRouter.openapi(
           name: body.name,
           slug: body.slug,
           teamId: team.id,
-          githubRepositoryId: body.githubRepositoryId,
-          githubInstallationId: body.githubInstallationId,
-          githubRepositoryName: body.githubRepositoryName,
-          githubRepositoryUrl: body.githubRepositoryUrl,
+          githubRepositoryId: body.githubRepository.id,
+          gitProductionBranch: body.githubRepository.defaultBranch,
         })
         .catch((error) => {
           if (isUniqueViolation(error)) {
@@ -157,13 +179,17 @@ projectsRouter.openapi(
     const db = c.get("db");
     const [project, team] = await Promise.all([
       db
-        .select()
+        .select(queryColumns())
         .from(schema.projects)
         .where(
           or(
             eq(schema.projects.id, c.req.param("project")),
             eq(schema.projects.slug, c.req.param("project"))
           )
+        )
+        .innerJoin(
+          schema.githubRepositories,
+          eq(schema.projects.githubRepositoryId, schema.githubRepositories.id)
         )
         .limit(1)
         .then(([project]) => project),

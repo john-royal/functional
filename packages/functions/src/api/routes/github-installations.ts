@@ -22,11 +22,15 @@ const githubInstallationSchema = z
   })
   .openapi("GitHubInstallation");
 
-const githubRepositorySchema = z
+export const githubRepositorySchema = z
   .object({
     id: z.number(),
     name: z.string(),
+    owner: z.string(),
     url: z.string(),
+    private: z.boolean(),
+    defaultBranch: z.string(),
+    installationId: z.number(),
   })
   .openapi("GitHubRepository");
 
@@ -186,8 +190,12 @@ githubInstallationsRouter.openapi(
     return c.json(
       repositories.map((repository) => ({
         id: repository.id,
-        name: repository.full_name,
+        name: repository.name,
+        owner: repository.owner.login,
         url: repository.html_url,
+        private: repository.private,
+        defaultBranch: repository.default_branch,
+        installationId,
       }))
     );
   }
