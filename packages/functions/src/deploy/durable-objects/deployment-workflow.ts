@@ -14,6 +14,7 @@ import assert from "node:assert";
 export interface DeploymentWorkflowInput {
   projectId: string;
   deploymentId: string;
+  ref: string;
 }
 
 export class DeploymentWorkflow extends WorkflowEntrypoint<
@@ -25,24 +26,21 @@ export class DeploymentWorkflow extends WorkflowEntrypoint<
   private jwt = new JWT(this.env.DEPLOYMENT_JWT_SECRET);
 
   async run(event: WorkflowEvent<DeploymentWorkflowInput>, step: WorkflowStep) {
-    const { projectId, deploymentId } = event.payload;
-    console.log(`[DeploymentWorkflow] run ${projectId} ${deploymentId}`);
+    const { projectId, deploymentId, ref } = event.payload;
+    console.log(`[DeploymentWorkflow] run ${projectId} ${deploymentId} ${ref}`);
     const metadata = await step.do("Fetch project metadata", async () => {
       const [metadata] = await this.db
         .select({
-          installationId: schema.githubInstallations.id,
           teamId: schema.projects.teamId,
-          owner: schema.githubInstallations.targetName,
-          repo: schema.projects.githubRepositoryName,
+          installationId: schema.githubRepositories.installationId,
+          owner: schema.githubRepositories.owner,
+          repo: schema.githubRepositories.name,
         })
         .from(schema.projects)
         .where(eq(schema.projects.id, projectId))
         .innerJoin(
-          schema.githubInstallations,
-          eq(
-            schema.githubInstallations.id,
-            schema.projects.githubInstallationId
-          )
+          schema.githubRepositories,
+          eq(schema.githubRepositories.id, schema.projects.githubRepositoryId)
         );
       if (!metadata) {
         throw new Error("Project not found");
@@ -66,7 +64,7 @@ export class DeploymentWorkflow extends WorkflowEntrypoint<
                 installationId: metadata.installationId,
                 owner: metadata.owner,
                 repo: metadata.repo,
-                ref: "main",
+                ref,
               },
             }),
             this.jwt.sign({
@@ -158,7 +156,7 @@ export class DeploymentWorkflow extends WorkflowEntrypoint<
         manifest
       );
       if (!session || !session.jwt || !session.buckets) {
-        return { jwt: undefined };
+        return { jwt: session?.jwt };
       }
       const jwt = session.jwt;
       let completionToken: string | undefined;
@@ -189,12 +187,19 @@ export class DeploymentWorkflow extends WorkflowEntrypoint<
           }
         })
       );
-      return { jwt: completionToken };
+      return { jwt: completionToken ?? jwt };
     });
     const script = await step.do("Put worker script", async () => {
       const metadata = {
         main_module: complete.payload.manifest.entrypoint,
-        // bindings: input.bindings,
+        bindings: assets
+          ? [
+              {
+                name: "ASSETS",
+                type: "assets",
+              },
+            ]
+          : undefined,
         // compatibility_flags: ["nodejs_compat"],
         // compatibility_date: "2025-05-01",
         assets,

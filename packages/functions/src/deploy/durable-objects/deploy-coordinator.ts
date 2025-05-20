@@ -76,12 +76,16 @@ export class DeployCoordinator extends DurableObject<Env> {
     if (!next) {
       return;
     }
-    await this.patch(next.id, { status: "building" });
+    await this.patch(next.id, {
+      status: "building",
+      startedAt: new Date(),
+    });
     await this.env.DEPLOYMENT_WORKFLOW.create({
       id: next.id,
       params: {
         projectId: next.projectId,
         deploymentId: next.id,
+        ref: next.commit.ref,
       },
     });
   }
@@ -92,19 +96,29 @@ export class DeployCoordinator extends DurableObject<Env> {
     output: NonNullable<SelectModel<"deployments">["output"]>
   ) {
     await this.init(teamId);
-    await this.patch(deploymentId, { status: "success", output });
+    await this.patch(deploymentId, {
+      status: "success",
+      output,
+      completedAt: new Date(),
+    });
     await this.dequeue();
   }
 
   async fail(teamId: string, deploymentId: string) {
     await this.init(teamId);
-    await this.patch(deploymentId, { status: "failed" });
+    await this.patch(deploymentId, {
+      status: "failed",
+      failedAt: new Date(),
+    });
     await this.dequeue();
   }
 
   async cancel(teamId: string, deploymentId: string) {
     await this.init(teamId);
-    await this.patch(deploymentId, { status: "canceled" });
+    await this.patch(deploymentId, {
+      status: "canceled",
+      canceledAt: new Date(),
+    });
     await this.dequeue();
   }
 
