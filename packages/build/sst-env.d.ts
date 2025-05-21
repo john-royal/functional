@@ -6,6 +6,10 @@
 import "sst"
 declare module "sst" {
   export interface Resource {
+    "FLY_API_TOKEN": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "GITHUB_APP_ID": {
       "type": "sst.sst.Secret"
       "value": string
@@ -21,6 +25,29 @@ declare module "sst" {
     "GITHUB_PRIVATE_KEY": {
       "type": "sst.sst.Secret"
       "value": string
+    }
+    "GITHUB_WEBHOOK_SECRET": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "ZeroGateway": {
+      "type": "sst.aws.ApiGatewayV2"
+      "url": string
+    }
+    "replication-bucket": {
+      "name": string
+      "type": "sst.aws.Bucket"
+    }
+    "replication-manager": {
+      "service": string
+      "type": "sst.aws.Service"
+    }
+    "view-syncer": {
+      "service": string
+      "type": "sst.aws.Service"
+    }
+    "vpc": {
+      "type": "sst.aws.Vpc"
     }
   }
 }

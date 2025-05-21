@@ -1,0 +1,24 @@
+{
+  "name": "@functional/cloudflare-utils",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "exports": {
+    "./assets": "./src/assets.ts",
+    "./client": "./src/client.ts",
+    "./esbuild": "./src/esbuild/index.ts",
+    "./validators": "./src/validators/index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@cloudflare/unenv-preset": "^2.3.2",
+    "esbuild": "^0.25.4",
+    "unenv": "^2.0.0-rc.17",
+    "zod": "^3.25.7"
+  }
+}

@@ -9,7 +9,9 @@ type WorkerBinding =
   | cloudflare.HyperdriveConfig
   | cloudflare.WorkersForPlatformsDispatchNamespace
   | cloudflare.WorkersKvNamespace
-  | cloudflare.WorkersScript;
+  | cloudflare.WorkersScript
+  | cloudflare.Queue
+  | random.RandomPassword;
 
 export interface WorkerProps
   extends Omit<
@@ -23,19 +25,21 @@ export interface WorkerProps
   };
   subdomain?: boolean;
   bindings?: Record<string, WorkerBinding>;
+  dev?: boolean;
 }
 
 export function createWorker(name: string, props: WorkerProps) {
   let scriptPath: $util.Output<string>;
   const dependsOn: $util.Resource[] = [];
   if (props.handler.bundle !== false) {
-    const build = new Build(`${name}-build`, {
+    const outdir = path.join(props.handler.cwd, "dist", name);
+    const build = new Build(`${name}Build`, {
       name,
       entry: path.join(props.handler.cwd, props.handler.path),
-      outdir: path.join(props.handler.cwd, "dist", name),
+      outdir,
     });
     dependsOn.push(build);
-    scriptPath = build.scriptPath;
+    scriptPath = build.path;
   } else {
     scriptPath = $util.output(path.join(props.handler.cwd, props.handler.path));
   }
@@ -50,11 +54,12 @@ export function createWorker(name: string, props: WorkerProps) {
       bindings: props.bindings
         ? formatWorkerBindings(props.bindings)
         : undefined,
+      observability: { enabled: true },
     },
     { dependsOn }
   );
   new cloudflare.WorkersScriptSubdomain(
-    `${name}-subdomain`,
+    `${name}Subdomain`,
     {
       scriptName: worker.scriptName,
       enabled: props.subdomain ?? false,
@@ -62,6 +67,15 @@ export function createWorker(name: string, props: WorkerProps) {
     },
     { dependsOn: [worker] }
   );
+  if (props.dev) {
+    new sst.x.DevCommand(`${name}Dev`, {
+      dev: {
+        title: name,
+        command: $interpolate`wrangler tail ${worker.scriptName}`,
+        directory: props.handler.cwd,
+      },
+    });
+  }
   return {
     worker,
   };
@@ -93,6 +107,13 @@ function formatWorkerBindings(
           id: binding.id,
         };
       }
+      if (binding instanceof cloudflare.Queue) {
+        return {
+          name,
+          type: "queue",
+          queueName: binding.queueName,
+        };
+      }
       if (binding instanceof cloudflare.WorkersForPlatformsDispatchNamespace) {
         return {
           name,
@@ -112,6 +133,13 @@ function formatWorkerBindings(
           name,
           type: "service",
           service: binding.scriptName,
+        };
+      }
+      if (binding instanceof random.RandomPassword) {
+        return {
+          name,
+          type: "secret_text",
+          text: $util.secret(binding.result),
         };
       }
       return {

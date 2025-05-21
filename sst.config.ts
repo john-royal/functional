@@ -17,20 +17,11 @@ export default $config({
     };
   },
   async run() {
-    const { createWorker } = await import("./infra/worker");
-    const neonProject = new neon.Project("NeonProject", {});
-    const hyperdrive = new cloudflare.HyperdriveConfig("Hyperdrive", {
-      accountId: sst.cloudflare.DEFAULT_ACCOUNT_ID,
-      name: `neon-${$app.stage}`,
-      origin: {
-        host: neonProject.databaseHost,
-        database: neonProject.databaseName,
-        password: neonProject.databasePassword,
-        scheme: "postgresql",
-        user: neonProject.databaseUser,
-        port: 5432,
-      },
-    });
+    const { createWorker } = await import("./infra/rpc/resources/worker");
+    const { WorkerAssets } = await import(
+      "./infra/rpc/resources/worker-assets"
+    );
+    const { hyperdrive } = await import("./infra/neon");
     const githubClientId = new sst.Secret("GITHUB_CLIENT_ID");
     const githubClientSecret = new sst.Secret("GITHUB_CLIENT_SECRET");
     const githubAppId = new sst.Secret("GITHUB_APP_ID");
@@ -73,6 +64,11 @@ export default $config({
         cwd: "packages/functions",
       },
       subdomain: true,
+      dev: true,
+    });
+    const messageQueue = new cloudflare.Queue("MessageQueue", {
+      queueName: `message-queue-${$app.stage}`,
+      accountId: sst.cloudflare.DEFAULT_ACCOUNT_ID,
     });
     const api = createWorker("Api", {
       scriptName: "api",
@@ -87,8 +83,11 @@ export default $config({
         GITHUB_APP_ID: githubAppId,
         GITHUB_PRIVATE_KEY: githubPrivateKey,
         HYPERDRIVE: hyperdrive,
+        MESSAGE_QUEUE: messageQueue,
+        FRONTEND_URL: "https://web.johnroyal.workers.dev",
       },
       subdomain: true,
+      dev: true,
     });
     const deploy = createWorker("Deploy", {
       scriptName: "deploy",
@@ -109,6 +108,55 @@ export default $config({
         HYPERDRIVE: hyperdrive,
         CF_ACCOUNT_ID: sst.cloudflare.DEFAULT_ACCOUNT_ID,
       },
+      dev: true,
+    });
+    new cloudflare.QueueConsumer("WebhookConsumer", {
+      queueId: messageQueue.queueId,
+      scriptName: deploy.worker.scriptName,
+      accountId: sst.cloudflare.DEFAULT_ACCOUNT_ID,
+      type: "worker",
+    });
+    const webhook = createWorker("Webhook", {
+      scriptName: "webhook",
+      compatibilityFlags: ["nodejs_compat"],
+      compatibilityDate: "2025-05-20",
+      handler: {
+        path: "src/webhook/index.ts",
+        cwd: "packages/functions",
+      },
+      subdomain: true,
+      dev: true,
+      bindings: {
+        GITHUB_WEBHOOK_SECRET: new sst.Secret("GITHUB_WEBHOOK_SECRET"),
+        MESSAGE_QUEUE: messageQueue,
+      },
+    });
+    const assets = new WorkerAssets("WebAssets", {
+      path: "packages/web/.output/public",
+      scriptName: "web",
+    });
+    const web = createWorker("Web", {
+      scriptName: "web",
+      compatibilityFlags: ["nodejs_compat"],
+      compatibilityDate: "2025-05-20",
+      handler: {
+        path: ".output/server/index.mjs",
+        cwd: "packages/web",
+      },
+      bindings: {
+        AUTH_URL: "https://auth.johnroyal.workers.dev",
+        AUTH: auth.worker,
+        API: api.worker,
+        VITE_API_URL: "https://api.johnroyal.workers.dev",
+        SESSION_SECRET: new random.RandomPassword("SessionSecret", {
+          length: 32,
+        }),
+        FRONTEND_URL: "https://web.johnroyal.workers.dev",
+        VITE_ZERO_URL: "https://jnt7z2q4qh.execute-api.us-east-1.amazonaws.com",
+      },
+      subdomain: true,
+      dev: true,
+      assets: assets.assets,
     });
   },
 });

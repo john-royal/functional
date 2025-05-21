@@ -1,5 +1,4 @@
-import { readFile } from "fs/promises";
-import { RPCProvider } from "./rpc/provider";
+import { RPCProvider } from "../provider";
 
 export interface BuildResourceInputs {
   name: string;
@@ -8,16 +7,16 @@ export interface BuildResourceInputs {
 }
 
 export interface BuildResourceOutputs extends BuildResourceInputs {
-  scriptPath: string;
-  manifest: Record<string, string>;
+  path: string;
+  files: Record<string, string>;
 }
 
 export class Build extends $util.dynamic.Resource {
   declare public readonly id: $util.Output<string>;
   declare public readonly entry: $util.Output<string>;
   declare public readonly outdir: $util.Output<string>;
-  declare public readonly scriptPath: $util.Output<string>;
-  declare public readonly manifest: $util.Output<Record<string, string>>;
+  declare public readonly path: $util.Output<string>;
+  declare public readonly files: $util.Output<Record<string, string>>;
 
   constructor(
     name: string,
@@ -27,7 +26,7 @@ export class Build extends $util.dynamic.Resource {
     super(
       new RPCProvider<BuildResourceInputs, BuildResourceOutputs>("build"),
       name,
-      { ...args, scriptPath: undefined, manifest: undefined },
+      { ...args, path: undefined, files: undefined },
       opts
     );
   }

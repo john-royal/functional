@@ -3,9 +3,10 @@
   "module": "index.ts",
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250514.0",
+    "@functional/cloudflare-utils": "workspace:*",
     "@types/bun": "latest",
     "@types/node": "22",
-    "alchemy": "^0.16.6",
+    "alchemy": "^0.16.9",
     "cloudflare": "^4.2.0",
     "esbuild": "^0.25.4",
     "sst": "^3.14.28",
@@ -17,14 +18,15 @@
   },
   "packageManager": "bun@1.2.13",
   "scripts": {
-    "dev": "turbo run dev",
     "deploy": "bun run alchemy.run.ts",
-    "deploy:fly": "fly deploy --update-only"
+    "deploy:fly": "fly deploy --update-only",
+    "dev": "turbo run dev"
   },
   "private": true,
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "internal/*"
   ],
   "trustedDependencies": [
     "@biomejs/biome",

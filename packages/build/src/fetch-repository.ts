@@ -18,6 +18,10 @@ export async function fetchRepository(input: FetchRepositoryInput) {
     console.error(`[FetchRepository] ${res.statusText}`, await res.text());
     throw new Error(`Failed to fetch repository: ${res.statusText}`);
   }
+  console.log("Repository fetched", {
+    status: res.status,
+    headers: Object.fromEntries(res.headers.entries()),
+  });
   const fileName = parseFileName(res);
   await Bun.write(`${input.rootdir}/${fileName}`, res);
   await $.cwd(input.rootdir)`tar -xf ${fileName}`;

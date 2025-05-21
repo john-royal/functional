@@ -1,4 +1,5 @@
-import { RPCProvider } from "./rpc/provider";
+import type { AssetManifest } from "@functional/cloudflare-utils/validators";
+import { RPCProvider } from "../provider";
 
 export interface WorkerAssetsArgs {
   scriptName: string;
@@ -8,7 +9,7 @@ export interface WorkerAssetsArgs {
 
 export interface WorkerAssetsState extends WorkerAssetsArgs {
   assets: cloudflare.types.output.WorkersScriptAssets;
-  manifest: Record<string, { hash: string; size: number }>;
+  manifest: AssetManifest;
 }
 
 export class WorkerAssets extends $util.dynamic.Resource {

@@ -1,18 +1,17 @@
-import { fetchRepository } from "./fetch-repository";
-import path from "node:path";
-import { detectPackageManager } from "./lib/package-manager";
-import { readdir } from "node:fs/promises";
-import type { BuildManifest } from "@functional/lib/build";
-import { sha256 } from "./lib/sha256";
-import assert from "node:assert";
 import { BuildEnvironment } from "@functional/lib/build";
+import assert from "node:assert";
+import { readdir } from "node:fs/promises";
 import os from "node:os";
+import path from "node:path";
+import { fetchRepository } from "./fetch-repository";
+import { detectPackageManager } from "./lib/package-manager";
+import { sha256 } from "./lib/sha256";
+import type { AssetManifest, WorkerMetadataInput } from "./lib/validators";
 
 const env = BuildEnvironment.parse(process.env);
-
-console.log("Environment", env);
-
 const rootdir = os.tmpdir();
+
+console.log("Fetching repository...");
 
 const { repoRoot } = await fetchRepository({
   rootdir,
@@ -23,49 +22,54 @@ const { repoRoot } = await fetchRepository({
 const workdir = path.join(rootdir, repoRoot);
 const outdir = path.join(workdir, "dist");
 
-const s3 = new Bun.S3Client({
-  accessKeyId: env.S3_ACCESS_KEY_ID,
-  secretAccessKey: env.S3_SECRET_ACCESS_KEY,
-  bucket: env.S3_BUCKET,
-  endpoint: env.S3_ENDPOINT,
-  sessionToken: env.S3_SESSION_TOKEN,
-  region: env.S3_REGION,
-});
-const s3Prefix = `${env.PROJECT_ID}/${env.DEPLOYMENT_ID}`;
-
-const packageManager = await detectPackageManager(workdir);
+const { packageManager, installCommand } = await detectPackageManager(workdir);
 
 const $ = Bun.$.cwd(workdir);
-await $`${packageManager.installCommand}`;
-await $`${packageManager.packageManager} run build`;
 
-const manifest: BuildManifest = {
-  entrypoint: "",
-  static: {},
-  modules: {},
+console.log(`Installing dependencies with ${packageManager}...`);
+await $`${installCommand}`;
+
+console.log("Building...");
+await $`${packageManager} run build`;
+
+const prepareAssets = async (outdir: string) => {
+  const outputs = await readdir(outdir, { recursive: true });
+  const manifest: AssetManifest = {};
+  const filesByHash = new Map<string, Bun.BunFile>();
+  await Promise.all(
+    outputs.map(async (fileName) => {
+      const filePath = path.join(outdir, fileName);
+      const file = Bun.file(filePath);
+      const stat = await file.stat();
+      if (stat.isDirectory()) {
+        return;
+      }
+      const hash = await sha256(await file.bytes());
+      fileName = fileName.startsWith("/") ? fileName : `/${fileName}`;
+      manifest[fileName] = {
+        hash,
+        size: stat.size,
+      };
+      filesByHash.set(hash, file);
+    })
+  );
+  return {
+    manifest,
+    getFileForUpload: async (hash: string) => {
+      const file = filesByHash.get(hash);
+      if (!file) {
+        throw new Error(`File with hash ${hash} not found`);
+      }
+      const bytes = await file.bytes();
+      return new File([bytes.toBase64()], hash, {
+        type: file.type,
+      });
+    },
+  };
 };
-
-const outputs = await readdir(outdir, { recursive: true });
-await Promise.all(
-  outputs.map(async (fileName) => {
-    const filePath = path.join(outdir, fileName);
-    const file = Bun.file(filePath);
-    const stat = await file.stat();
-    if (stat.isDirectory()) {
-      return;
-    }
-    const [hash] = await Promise.all([
-      file.bytes().then(sha256),
-      s3.write(`${s3Prefix}/static/${fileName}`, file),
-    ]);
-    manifest.static[fileName] = {
-      size: stat.size,
-      hash,
-      type: file.type,
-    };
-  })
-);
-
+let mainModule: string | undefined;
+const modules = new Map<string, File>();
+console.log("Building modules...");
 const modulesDir = path.join(workdir, "modules");
 const bundle = await Bun.build({
   entrypoints: [path.join(process.cwd(), "src/templates/static-site.ts")],
@@ -77,35 +81,59 @@ await Promise.all(
   bundle.outputs.map(async (output) => {
     const file = Bun.file(output.path);
     const filePath = path.relative(modulesDir, output.path);
-    const [{ hash, size }] = await Promise.all([
-      file.bytes().then(async (bytes) => ({
-        hash: await sha256(bytes),
-        size: bytes.length,
-      })),
-      s3.write(`${s3Prefix}/modules/${filePath}`, file),
-    ]);
-    manifest.modules[filePath] = {
-      hash,
-      size,
-      type: file.type,
-      kind: output.kind,
-    };
     if (output.kind === "entry-point") {
-      assert(!manifest.entrypoint, "Multiple entrypoints found");
-      manifest.entrypoint = filePath;
+      assert(!mainModule, "Multiple entrypoints found");
+      mainModule = filePath;
     }
+    modules.set(
+      filePath,
+      new File([await file.bytes()], filePath, {
+        type:
+          output.kind === "entry-point" || output.kind === "chunk"
+            ? "application/javascript+module"
+            : output.kind === "sourcemap"
+              ? "application/source-map"
+              : "application/octet-stream",
+      })
+    );
   })
 );
+if (!mainModule) {
+  throw new Error("No entry point found");
+}
 
-await s3.write(`${s3Prefix}/build-manifest.json`, Response.json(manifest));
+// upload assets
+const jwt: string | undefined = undefined;
 
-console.log("Sending manifest to API...");
+const metadata: WorkerMetadataInput = {
+  main_module: mainModule,
+  assets: jwt ? { jwt } : undefined,
+  tags: [`project:${env.PROJECT_ID}`, `deployment:${env.DEPLOYMENT_ID}`],
+  bindings: jwt
+    ? [
+        {
+          name: "ASSETS",
+          type: "assets",
+        },
+      ]
+    : undefined,
+};
+
+const formData = new FormData();
+formData.append(
+  "metadata",
+  new Blob([JSON.stringify(metadata)], {
+    type: "application/json",
+  })
+);
+for (const [name, file] of modules) {
+  formData.append(name, file);
+}
+
 const response = await fetch(new URL("/deploy", env.API_URL), {
   method: "POST",
   headers: {
     Authorization: `Bearer ${env.DEPLOY_TOKEN}`,
-    "Content-Type": "application/json",
   },
-  body: JSON.stringify({ manifest }),
+  body: formData,
 });
-console.log("API response", response.status);
