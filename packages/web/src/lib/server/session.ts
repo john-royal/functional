@@ -1,5 +1,6 @@
 import { useSession } from "@tanstack/react-start/server";
-import { serverEnv } from "./env.server";
+import { env } from "cloudflare:workers";
+
 interface AppSession {
   team?: string;
   challenge?: { state: string; verifier?: string };
@@ -7,6 +8,6 @@ interface AppSession {
 
 export function useAppSession() {
   return useSession<AppSession>({
-    password: serverEnv.SESSION_SECRET,
+    password: env.SESSION_SECRET,
   });
 }

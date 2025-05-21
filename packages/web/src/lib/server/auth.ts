@@ -16,7 +16,7 @@ const redirectURI = `${env.FRONTEND_URL}/auth/callback`;
 
 const authClient = createClient({
   clientID: "api",
-  issuer: env.AUTH_URL,
+  issuer: env.AUTH_ISSUER,
   fetch: async (url, options) => {
     if (url.includes("/.well-known")) {
       return env.AUTH.fetch(url, {

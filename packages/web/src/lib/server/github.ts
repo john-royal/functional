@@ -18,7 +18,7 @@ export const redirectToGitHubInstall = createServerFn()
       await session.update({ team: data.team });
     }
     throw redirect({
-      href: "https://github.com/apps/functional-dev/installations/select-target",
+      href: "https://github.com/apps/functional-dev/installations/new",
     });
   });
 

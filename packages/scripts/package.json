@@ -1,11 +1,6 @@
 {
   "name": "@functional/scripts",
   "module": "index.ts",
-  "type": "module",
-  "private": true,
-  "scripts": {
-    "dev": "bun run  --cwd ../../ packages/scripts/src/dev/index.ts"
-  },
   "devDependencies": {
     "@types/bun": "latest",
     "esbuild": "^0.25.4",
@@ -15,5 +10,15 @@
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "private": true,
+  "scripts": {
+    "dev": "bun run  --cwd ../../ packages/scripts/src/dev/index.ts",
+    "generate-openapi": "openapi-typescript spec.json -o src/fly/openapi.gen.ts && biome check --fix src/fly/openapi.gen.ts"
+  },
+  "type": "module",
+  "dependencies": {
+    "openapi-fetch": "^0.14.0",
+    "openapi-typescript": "^7.8.0"
   }
 }

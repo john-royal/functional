@@ -2,16 +2,11 @@
   "name": "functional-platform",
   "module": "index.ts",
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250514.0",
-    "@functional/cloudflare-utils": "workspace:*",
-    "@types/bun": "latest",
-    "@types/node": "22",
-    "alchemy": "^0.16.9",
-    "cloudflare": "^4.2.0",
-    "esbuild": "^0.25.4",
-    "sst": "^3.14.28",
-    "turbo": "^2.5.3",
-    "unenv": "^2.0.0-rc.17"
+    "@cloudflare/workers-types": "^4.20250521.0",
+    "@types/bun": "^1.2.13",
+    "@types/node": "^22.15.21",
+    "sst": "^3.16.0",
+    "turbo": "^2.5.3"
   },
   "peerDependencies": {
     "typescript": "^5.8.3"

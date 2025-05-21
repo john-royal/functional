@@ -26,29 +26,25 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
-    "GITHUB_WEBHOOK_SECRET": {
-      "type": "sst.sst.Secret"
+    "SessionSecret": {
+      "type": "random.index/randomPassword.RandomPassword"
       "value": string
     }
-    "ZeroGateway": {
-      "type": "sst.aws.ApiGatewayV2"
-      "url": string
+    "SessionSecret2": {
+      "type": "random.index/randomPassword.RandomPassword"
+      "value": string
     }
-    "replication-bucket": {
-      "name": string
-      "type": "sst.aws.Bucket"
-    }
-    "replication-manager": {
-      "service": string
-      "type": "sst.aws.Service"
-    }
-    "view-syncer": {
-      "service": string
-      "type": "sst.aws.Service"
-    }
-    "vpc": {
-      "type": "sst.aws.Vpc"
-    }
+  }
+}
+// cloudflare 
+import * as cloudflare from "@cloudflare/workers-types";
+declare module "sst" {
+  export interface Resource {
+    "API": cloudflare.Service
+    "Auth": cloudflare.Service
+    "AuthKV": cloudflare.KVNamespace
+    "SessionSecret": cloudflare.
+    "SessionSecret2": cloudflare.
   }
 }
 

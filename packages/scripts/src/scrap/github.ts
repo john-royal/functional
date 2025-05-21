@@ -1,4 +1,4 @@
-import { GitHubClient } from "../../functions/src/api/lib/github";
+import { GitHubClient } from "../../../functions/src/api/lib/github";
 
 const github = new GitHubClient({
   appId: process.env.GITHUB_APP_ID!,

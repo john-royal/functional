@@ -3,12 +3,10 @@ import { issuer } from "@openauthjs/openauth";
 import { GithubProvider } from "@openauthjs/openauth/provider/github";
 import { CloudflareStorage } from "@openauthjs/openauth/storage/cloudflare";
 import { DatabaseClient, GitHubAuthClient } from "./lib";
+import { Resource } from "sst";
 
 interface Env {
-  AUTH_KV: KVNamespace;
   HYPERDRIVE: Hyperdrive;
-  GITHUB_CLIENT_ID: string;
-  GITHUB_CLIENT_SECRET: string;
 }
 
 export default {
@@ -17,13 +15,13 @@ export default {
     const github = new GitHubAuthClient(ctx);
     const app = issuer({
       storage: CloudflareStorage({
-        namespace: env.AUTH_KV,
+        namespace: Resource.AuthKV,
       }),
       subjects,
       providers: {
         github: GithubProvider({
-          clientID: env.GITHUB_CLIENT_ID,
-          clientSecret: env.GITHUB_CLIENT_SECRET,
+          clientID: Resource.GITHUB_CLIENT_ID.value,
+          clientSecret: Resource.GITHUB_CLIENT_SECRET.value,
           scopes: [], // determined by GitHub App permissions
         }),
       },
